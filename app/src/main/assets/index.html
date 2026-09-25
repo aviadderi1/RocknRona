@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#111214">
-<title>במה – פרומפטר מילים</title>
+<title>RocknRona – פרומפטר מילים</title>
 <link rel="stylesheet" href="fonts.css">
 <style>
 :root{--bg:#111214;--p1:#1A1C20;--p2:#15171A;--fld:#1B1D22;--ln:#26292F;--ln2:#2E3138;--tx:#F2EEE6;--mu:#A09A90;--mu2:#8F897F;--am:#E8A33D;--amT:#2A2419;--amB:#4A3E28;--ve:#E8A33D;--ch:#7DB8F0;--br:#C9A6F0;--no:#8F897F;--ui:'Assistant','Segoe UI',sans-serif;--ti:'Rubik','Assistant',sans-serif;--bf:'Frank Ruhl Libre',Georgia,serif}
@@ -52,7 +52,7 @@ input[type=range]{accent-color:var(--am);width:100%;height:32px}
 /* library */
 .brand{display:flex;align-items:center;gap:12px}
 .logo{width:42px;height:42px;border-radius:11px;background:var(--am);color:#111214;display:flex;align-items:center;justify-content:center}
-.brand b{font-family:var(--bf);font-size:28px;font-weight:900}
+.logoImg{height:42px;width:auto;display:block}
 .brand span{font-size:15px;color:var(--mu);padding-top:6px}
 .search{width:320px;height:46px;padding:0 14px;display:flex;align-items:center;gap:10px;background:var(--fld);border:1px solid var(--ln2);border-radius:12px;color:var(--mu)}
 .search input{flex:1;min-width:0;background:transparent;border:0;outline:none;font-size:16px;color:var(--tx)}
@@ -196,6 +196,13 @@ select.chip{cursor:pointer}
 .pNext b{font-family:var(--ti);font-size:16px;font-weight:600;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .showBar{position:absolute;left:24px;bottom:24px;width:52px;height:52px;border-radius:50%;background:rgba(31,33,37,.55);color:var(--mu2);border:1px solid #2A2D33;display:none;align-items:center;justify-content:center}
 #play.barHidden .pBarWrap{display:none}
+#play.manual .onlyAuto{display:none}
+#play:not(.manual) .onlyMan{display:none}
+.pb.mode.on{background:var(--amT);color:#F4C77A}
+.pPart{min-width:118px;text-align:center;display:flex;flex-direction:column;gap:2px}
+.pPart b{font-size:18px;font-weight:800;color:var(--tx);white-space:nowrap}
+.pPart small{font-size:12px;color:var(--mu2)}
+#play.manual .marker{border-right-color:#5A4A2E}
 #play.barHidden .showBar{display:flex}
 
 /* import */
@@ -266,7 +273,7 @@ select.chip{cursor:pointer}
 
 <section id="lib" class="screen active">
   <header class="hdr">
-    <div class="brand"><div class="logo"><i data-ic="mic" data-s="22"></i></div><b>במה</b><span>פרומפטר מילים</span></div>
+    <div class="brand"><img class="logoImg" src="logo.png" alt="RocknRona"><span>פרומפטר מילים</span></div>
     <div class="flex1"></div>
     <label class="search"><i data-ic="search" data-s="18"></i><input id="q" type="search" placeholder="חיפוש שיר, אמן או שורה…" aria-label="חיפוש"></label>
     <button class="btn" id="libImport"><i data-ic="upload" data-s="18"></i><span class="hideS">ייבוא PDF</span></button>
@@ -314,12 +321,17 @@ select.chip{cursor:pointer}
     <div class="marker" id="pMarker"></div>
     <div class="pBarWrap"><div class="pBar">
       <button class="pb clear" id="pPrev" aria-label="שיר קודם"><i data-ic="prev" data-s="24"></i></button>
-      <button class="pb big" id="pPlay" aria-label="הפעל גלילה"><i data-ic="play" data-s="24"></i></button>
+      <button class="pb big onlyAuto" id="pPlay" aria-label="הפעל גלילה"><i data-ic="play" data-s="24"></i></button>
+      <button class="pb onlyMan" id="pPartPrev" aria-label="חלק קודם"><i data-ic="up" data-s="26"></i></button>
+      <div class="pPart onlyMan" id="pPart"></div>
+      <button class="pb big onlyMan" id="pPartNext" aria-label="חלק הבא"><i data-ic="down" data-s="28"></i></button>
       <button class="pb clear" id="pNext" aria-label="שיר הבא"><i data-ic="next" data-s="24"></i></button>
       <div class="vsep"></div>
-      <button class="pb" id="pSlow" aria-label="האט גלילה">−</button>
-      <div class="spd"><b id="pSpd">1.0×</b><small>מהירות</small></div>
-      <button class="pb" id="pFast" aria-label="האץ גלילה">+</button>
+      <button class="pb wide mode" id="pMode" aria-pressed="false"><i data-ic="hand" data-s="18"></i><span>גלילה ידנית</span></button>
+      <div class="vsep onlyAuto"></div>
+      <button class="pb onlyAuto" id="pSlow" aria-label="האט גלילה">−</button>
+      <div class="spd onlyAuto"><b id="pSpd">1.0×</b><small>מהירות</small></div>
+      <button class="pb onlyAuto" id="pFast" aria-label="האץ גלילה">+</button>
       <div class="vsep"></div>
       <button class="pb" id="pSm" aria-label="הקטן טקסט">א-</button>
       <button class="pb" id="pLg" aria-label="הגדל טקסט" style="font-size:21px">א+</button>
@@ -401,6 +413,7 @@ const ICON={
  sort:SV+'<path d="M7 4v16"/><path d="M3 8l4-4 4 4"/><path d="M17 20V4"/><path d="M13 16l4 4 4-4"/></svg>',
  invert:SV+'<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>',
  text:SV+'<path d="M4 7V5h16v2"/><path d="M12 5v14"/><path d="M9 19h6"/></svg>',
+ hand:SV+'<path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/></svg>',
  move:SV+'<path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 13h6"/><path d="M13 10l3 3-3 3"/></svg>'
 };
 function ic(n,s){s=s||20;return (ICON[n]||'').replace('<svg','<svg width="'+s+'" height="'+s+'"')}
@@ -853,7 +866,7 @@ async function pdfToText(s){
 }
 
 /* ========= prompter ========= */
-const P={list:[],i:0,playing:false,last:0,raf:0,touch:false,pos:0,elapsed:0,from:'lib',tops:[],lines:[],cur:-1,tShown:-1,tok:null,upd:false};
+const P={parts:[],linePart:[],list:[],i:0,playing:false,last:0,raf:0,touch:false,pos:0,elapsed:0,from:'lib',tops:[],lines:[],cur:-1,tShown:-1,tok:null,upd:false};
 const playSong=()=>S.songs.find(s=>s.id===P.list[P.i]);
 function startShow(ids,idx){
  const target=ids[idx];
@@ -875,9 +888,10 @@ async function loadPlay(){
  $('#pPrev').disabled=P.i===0;$('#pNext').disabled=P.i>=P.list.length-1;
  $('#pInv').hidden=!isPdf;$('#pSm').hidden=isPdf;$('#pLg').hidden=isPdf;$('#pMarker').hidden=isPdf;
  $('#pInv').classList.toggle('on',!!s.invert);$('#pMir').classList.toggle('on',!!S.ui.mirror);
+ applyMode();
  sc.scrollTop=0;
  if(isPdf)await buildPdf(s);else buildText(s);
- measure();onPScroll();updSpeed();updTime();
+ measure();onPScroll();updSpeed();updTime();updPart();
 }
 function buildText(s){
  const st=s.style,f=font(st.font),inner=$('#pInner');
@@ -887,17 +901,21 @@ function buildText(s){
  s.parts.forEach(p=>{
   const src=srcOf(s,p);if(!src||!src.text.trim())return;
   const col=st.colors[src.type]||'#fff';
+  h+='<div class="part" data-name="'+esc(L[p.id])+'">';
   if(st.labels)h+='<div class="sec" style="color:'+col+'">'+esc(L[p.id])+(p.ref?' ↺':'')+'</div>';
   src.text.split('\n').forEach(l=>{h+=l.trim()?'<div class="ln'+(src.type==='note'?' note':'')+'" style="color:'+col+'">'+esc(l)+'</div>':'<div class="gap"></div>'});
   if(!st.labels)h+='<div class="gap"></div>';
+  h+='</div>';
  });
  inner.innerHTML=h+endHint();
  P.lines=$$('.ln',inner);
+ P.parts=$$('.part',inner);
+ P.linePart=P.lines.map(l=>P.parts.indexOf(l.closest('.part')));
 }
 async function buildPdf(s){
  const inner=$('#pInner'),tok=P.tok;
  inner.className='pInner pdf'+(s.invert?' inv':'')+(S.ui.mirror?' mirror':'');inner.style.cssText='';
- inner.innerHTML='<div class="pLoad"><span class="spin"></span>טוען את הקובץ…</div>';P.lines=[];
+ inner.innerHTML='<div class="pLoad"><span class="spin"></span>טוען את הקובץ…</div>';P.lines=[];P.parts=[];
  try{
   const doc=await pdfById(s.pdfId);if(tok!==P.tok)return;
   const w=Math.max(300,Math.min($('#pScroll').clientWidth-48,1100));
@@ -905,7 +923,7 @@ async function buildPdf(s){
   for(let n=s.from||1;n<=(s.to||doc.numPages);n++){
    const c=await renderPage(doc,n,w);if(tok!==P.tok)return;
    if(first){inner.innerHTML='';first=false}
-   c.className='pdfPage';inner.appendChild(c);
+   c.className='pdfPage';inner.appendChild(c);P.parts=$$('.pdfPage',inner);updPart();
   }
   inner.insertAdjacentHTML('beforeend',endHint());
  }catch(e){if(tok===P.tok)inner.innerHTML='<div class="pLoad">לא ניתן לטעון את קובץ ה-PDF</div>'}
@@ -916,7 +934,9 @@ function onPScroll(){
  requestAnimationFrame(()=>{
   P.upd=false;const sc=$('#pScroll'),max=sc.scrollHeight-sc.clientHeight;
   $('#pProg').style.width=(max>0?Math.min(100,sc.scrollTop/max*100):0)+'%';
+  updPart();
   if(!P.lines.length)return;
+  if(S.ui.manual){const cp=curPart();if(cp!==P.cur){P.cur=cp;P.lines.forEach((l,i)=>{const pi=P.linePart[i];l.classList.toggle('past',pi<cp);l.classList.toggle('cur',pi===cp)})}return}
   const y=sc.scrollTop+sc.clientHeight*.38;let best=0,bd=1e12;
   for(let i=0;i<P.tops.length;i++){const d=Math.abs(P.tops[i]-y);if(d<bd){bd=d;best=i}}
   if(best!==P.cur){P.cur=best;P.lines.forEach((l,i)=>{l.classList.toggle('past',i<best);l.classList.toggle('cur',i===best)})}
@@ -945,6 +965,33 @@ function changeSize(d){
  $('#pInner').style.fontSize=s.style.size+'px';measure();
  sc.scrollTop=r*sc.scrollHeight;P.pos=sc.scrollTop;P.cur=-1;onPScroll();toast('גודל טקסט: '+s.style.size);
 }
+function readY(){const sc=$('#pScroll');return playSong()&&playSong().kind==='pdf'?sc.scrollTop+40:sc.scrollTop+sc.clientHeight*.38+8}
+function partTop(el){const sc=$('#pScroll');return playSong().kind==='pdf'?el.offsetTop-20:el.offsetTop-sc.clientHeight*.38}
+function curPart(){const y=readY();let c=0;for(let i=0;i<P.parts.length;i++){if(P.parts[i].offsetTop<=y)c=i;else break}return c}
+function goPart(d){
+ if(!P.parts.length)return;
+ const sc=$('#pScroll'),max=sc.scrollHeight-sc.clientHeight;const i=curPart()+d;
+ if(i>=P.parts.length){if(P.i<P.list.length-1)goSong(1);else toast('סוף הסט');return}
+ if(i<0)return;
+ const top=Math.max(0,Math.min(max,partTop(P.parts[i])));
+ sc.scrollTo({top,behavior:'smooth'});
+}
+function updPart(){
+ const e=$('#pPart');if(!e)return;const n=P.parts.length;
+ if(!n){e.innerHTML='<b>—</b><small>ידני</small>';return}
+ const i=curPart(),pdf=playSong()&&playSong().kind==='pdf';
+ e.innerHTML='<b>'+(pdf?'עמוד '+(i+1):esc(P.parts[i].dataset.name||''))+'</b><small>'+(i+1)+' מתוך '+n+'</small>';
+ $('#pPartPrev').disabled=i===0;
+}
+function applyMode(){
+ const m=!!S.ui.manual;$('#play').classList.toggle('manual',m);
+ const b=$('#pMode');b.classList.toggle('on',m);b.setAttribute('aria-pressed',m?'true':'false');
+}
+function toggleMode(){
+ S.ui.manual=!S.ui.manual;save();P.playing=false;updPlayBtn();applyMode();P.cur=-1;
+ if(S.ui.manual&&P.parts.length){const sc=$('#pScroll');sc.scrollTo({top:Math.max(0,partTop(P.parts[curPart()])),behavior:'smooth'})}
+ onPScroll();toast(S.ui.manual?'גלילה ידנית: מעבר בין חלקים':'גלילה אוטומטית');
+}
 function exitShow(){
  P.playing=false;P.tok=null;cancelAnimationFrame(P.raf);keepAwake(false);
  if(P.from==='edit'&&curSong()){show('edit');renderEditor()}else{show('lib');renderLib()}
@@ -959,20 +1006,28 @@ $('#pInv').onclick=()=>{const s=playSong();s.invert=!s.invert;touch(s);$('#pInne
 $('#pHide').onclick=()=>{S.ui.barHidden=true;save();$('#play').classList.add('barHidden')};
 $('#pShow').onclick=()=>{S.ui.barHidden=false;save();$('#play').classList.remove('barHidden')};
 $('#pExit').onclick=exitShow;
+$('#pMode').onclick=toggleMode;
+$('#pPartPrev').onclick=()=>goPart(-1);$('#pPartNext').onclick=()=>goPart(1);
 (function(){
  const sc=$('#pScroll');
  sc.addEventListener('scroll',onPScroll,{passive:true});
  sc.addEventListener('touchstart',()=>{P.touch=true},{passive:true});
  const end=()=>{P.touch=false;P.pos=sc.scrollTop};
  sc.addEventListener('touchend',end,{passive:true});sc.addEventListener('touchcancel',end,{passive:true});
- sc.addEventListener('click',togglePlay);
+ sc.addEventListener('click',e=>{
+  if(!S.ui.manual)return togglePlay();
+  const r=sc.getBoundingClientRect();let left=e.clientX<r.left+r.width/2;if(S.ui.mirror)left=!left;
+  goPart(left?1:-1);
+ });
 })();
 window.addEventListener('resize',()=>{if(SCREEN==='play'){measure();P.cur=-1;onPScroll()}else if(SCREEN==='edit')$$('#blocks textarea[data-txt]').forEach(autosize)});
 document.addEventListener('keydown',e=>{
  if(!$('#modalWrap').hidden){if(e.key==='Escape')closeModal();return}
  if(SCREEN!=='play')return;
  const sc=$('#pScroll'),k=e.key;
- if(k===' '||k==='Enter'){e.preventDefault();togglePlay()}
+ if(S.ui.manual&&(k===' '||k==='Enter'||k==='PageDown'||k==='ArrowDown')){e.preventDefault();goPart(1)}
+ else if(S.ui.manual&&(k==='PageUp'||k==='ArrowUp')){e.preventDefault();goPart(-1)}
+ else if(k===' '||k==='Enter'){e.preventDefault();togglePlay()}
  else if(k==='PageDown'||k==='ArrowDown'){e.preventDefault();sc.scrollBy({top:sc.clientHeight*.4,behavior:'smooth'})}
  else if(k==='PageUp'||k==='ArrowUp'){e.preventDefault();sc.scrollBy({top:-sc.clientHeight*.4,behavior:'smooth'})}
  else if(k==='ArrowLeft'){e.preventDefault();goSong(1)}
