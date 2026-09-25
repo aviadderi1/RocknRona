@@ -262,6 +262,16 @@ select.chip{cursor:pointer}
 .rd{width:20px;height:20px;border-radius:50%;border:2px solid var(--mu2);flex-shrink:0;margin-top:2px}
 .radio.on .rd{border-color:var(--am);background:var(--am);box-shadow:inset 0 0 0 4px var(--amT)}
 
+
+/* splash */
+#splash{position:fixed;inset:0;z-index:100;background:radial-gradient(ellipse at 50% 40%,#1C1D21 0%,#0A0A0B 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7vh;transition:opacity .6s ease}
+#splash.out{opacity:0;pointer-events:none}
+.spLogo{width:min(78vw,760px);height:auto;filter:drop-shadow(0 6px 30px rgba(232,163,61,.18))}
+.spMic{width:min(70vw,520px);height:auto;overflow:visible}
+.spPct{font-size:15px;font-weight:700;color:#8F897F;font-variant-numeric:tabular-nums;margin-top:-4vh}
+.spark{transform-box:fill-box;transform-origin:center;animation:tw .9s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.15;transform:scale(.4)}50%{opacity:1;transform:scale(1.15)}}
+@media (prefers-reduced-motion:reduce){.spark{animation:none}}
 /* modal + toast */
 .modal-wrap{position:fixed;inset:0;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
 .modal-wrap[hidden]{display:none}
@@ -320,6 +330,50 @@ select.chip{cursor:pointer}
 </style>
 </head>
 <body>
+
+<div id="splash" aria-label="טוען את RocknRona" role="img">
+  <img class="spLogo" src="logo.png" alt="RocknRona">
+  <svg class="spMic" viewBox="0 0 420 124" aria-hidden="true">
+    <defs>
+      <linearGradient id="mHandle" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#55575D"/><stop offset=".16" stop-color="#232427"/><stop offset=".55" stop-color="#0B0B0C"/><stop offset=".86" stop-color="#1B1C1F"/><stop offset="1" stop-color="#34363A"/></linearGradient>
+      <linearGradient id="mMetal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F6F6F8"/><stop offset=".28" stop-color="#BFC1C6"/><stop offset=".55" stop-color="#6F7278"/><stop offset=".8" stop-color="#D2D4D8"/><stop offset="1" stop-color="#63666C"/></linearGradient>
+      <radialGradient id="mBall" cx=".36" cy=".3" r=".78"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".22" stop-color="#E1E3E6"/><stop offset=".6" stop-color="#9DA0A6"/><stop offset="1" stop-color="#3A3C41"/></radialGradient>
+      <radialGradient id="mShade" cx=".4" cy=".34" r=".72"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset=".68" stop-color="#000" stop-opacity=".08"/><stop offset="1" stop-color="#000" stop-opacity=".6"/></radialGradient>
+      <radialGradient id="mSpec"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+      <pattern id="mMesh" width="4.4" height="4.4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V4.4M0 0H4.4" stroke="#17181B" stroke-width=".85" stroke-opacity=".6" fill="none"/></pattern>
+      <linearGradient id="spShine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFE7B0" stop-opacity="0"/><stop offset=".5" stop-color="#FFF4D6" stop-opacity=".6"/><stop offset="1" stop-color="#FFE7B0" stop-opacity="0"/></linearGradient>
+      <filter id="spDim"><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope=".34"/><feFuncG type="linear" slope=".34"/><feFuncB type="linear" slope=".38"/></feComponentTransfer></filter>
+      <filter id="spGlow" x="-10%" y="-40%" width="120%" height="180%"><feGaussianBlur stdDeviation="7"/></filter>
+      <filter id="spSoft" x="-10%" y="-200%" width="120%" height="500%"><feGaussianBlur stdDeviation="4"/></filter>
+      <clipPath id="spClip"><rect id="spRect" x="420" y="0" width="0" height="124"/></clipPath>
+      <clipPath id="spBody"><path d="M146 37L382 47Q394 48 394 60Q394 72 382 73L146 83Z"/><path d="M124 30L150 36L150 84L124 90Z"/><circle cx="80" cy="60" r="52"/></clipPath>
+      <g id="micG">
+        <path d="M146 37L382 47Q394 48 394 60Q394 72 382 73L146 83Z" fill="url(#mHandle)"/>
+        <path d="M364 46.2L382 47Q394 48 394 60Q394 72 382 73L364 73.8Z" fill="url(#mMetal)"/>
+        <path d="M364 46.2V73.8" stroke="#000" stroke-opacity=".4" stroke-width="1.2"/>
+        <path d="M156 41.8L360 50" stroke="#fff" stroke-opacity=".2" stroke-width="2" stroke-linecap="round"/>
+        <path d="M124 30L150 36L150 84L124 90Z" fill="url(#mMetal)"/>
+        <path d="M137 33V87" stroke="#000" stroke-opacity=".28" stroke-width="2.4"/>
+        <path d="M139.5 33.6V86.4" stroke="#fff" stroke-opacity=".35" stroke-width=".8"/>
+        <circle cx="80" cy="60" r="52" fill="url(#mBall)"/>
+        <circle cx="80" cy="60" r="52" fill="url(#mMesh)"/>
+        <circle cx="80" cy="60" r="52" fill="url(#mShade)"/>
+        <ellipse cx="88" cy="60" rx="6" ry="51.4" fill="none" stroke="#1E2023" stroke-width="1.6" stroke-opacity=".45"/>
+        <ellipse cx="87" cy="60" rx="6" ry="51.4" fill="none" stroke="#fff" stroke-width=".6" stroke-opacity=".3"/>
+        <ellipse cx="60" cy="34" rx="20" ry="11" fill="url(#mSpec)" transform="rotate(-32 60 34)"/>
+      </g>
+    </defs>
+    <ellipse cx="220" cy="114" rx="175" ry="5" fill="#000" opacity=".7" filter="url(#spSoft)"/>
+    <use href="#micG" filter="url(#spDim)"/>
+    <g clip-path="url(#spClip)">
+      <g filter="url(#spGlow)" opacity=".55" fill="#E8A33D"><path d="M146 37L382 47Q394 48 394 60Q394 72 382 73L146 83Z"/><path d="M124 30L150 36L150 84L124 90Z"/><circle cx="80" cy="60" r="52"/></g>
+      <use href="#micG"/>
+      <g clip-path="url(#spBody)"><rect id="spShineR" x="-120" y="0" width="90" height="124" fill="url(#spShine)"/></g>
+    </g>
+    <g id="spSparks" fill="#FFF6DA"></g>
+  </svg>
+  <div class="spPct" id="spPct">0%</div>
+</div>
 
 <section id="lib" class="screen active">
   <header class="hdr">
@@ -1468,6 +1522,29 @@ $$('i[data-ic]').forEach(e=>{e.outerHTML=ic(e.dataset.ic,+e.dataset.s||20)});
 $('#srcSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(b)pickSource(b.dataset.src)});
 renderLib();
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+
+/* ========= splash ========= */
+(function(){
+ const sp=$('#splash');if(!sp)return;
+ const DUR=5000,rect=$('#spRect'),pct=$('#spPct'),sparks=$('#spSparks'),shine=$('#spShineR');
+ const star=(x,y,r,d)=>'<path class="spark" style="animation-delay:'+d+'s" d="M'+x+' '+(y-r)+'Q'+(x+r*.18)+' '+(y-r*.18)+' '+(x+r)+' '+y+'Q'+(x+r*.18)+' '+(y+r*.18)+' '+x+' '+(y+r)+'Q'+(x-r*.18)+' '+(y+r*.18)+' '+(x-r)+' '+y+'Q'+(x-r*.18)+' '+(y-r*.18)+' '+x+' '+(y-r)+'Z"/>';
+ const t0=performance.now();let last=-1;
+ function frame(now){
+  const p=Math.min(1,(now-t0)/DUR),e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2,w=e*372;
+  rect.setAttribute('x',396-w);rect.setAttribute('width',w+1);
+  pct.textContent=Math.round(p*100)+'%';
+  shine.setAttribute('x',-120+((now-t0)%1400)/1400*560);
+  const step=Math.floor(now/160);
+  if(step!==last){last=step;const ex=396-w;let h='';
+   for(let k=0;k<3;k++)h+=star(ex+(Math.random()*16-4),60+(Math.random()*64-32)*(ex<132?1:.4),3+Math.random()*5,(Math.random()*.5).toFixed(2));
+   if(w>30)for(let k=0;k<2;k++){const x=396-Math.random()*w;h+=star(x,60+(Math.random()*50-25)*(x<132?1:.35),2+Math.random()*3,(Math.random()*.8).toFixed(2))}
+   if(p>=1)for(let k=0;k<6;k++)h+=star(40+Math.random()*80,20+Math.random()*80,3+Math.random()*6,(Math.random()*.4).toFixed(2));
+   sparks.innerHTML=h;}
+  if(p<1)requestAnimationFrame(frame);
+  else setTimeout(()=>{sp.classList.add('out');setTimeout(()=>sp.remove(),650)},350);
+ }
+ requestAnimationFrame(frame);
+})();
 </script>
 </body>
 </html>
