@@ -16,6 +16,7 @@ button{cursor:pointer}
 button:disabled{opacity:.35;cursor:default}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--am);outline-offset:2px}
 svg{flex-shrink:0}
+[hidden]{display:none!important}
 select option{background:#1A1C20;color:#F2EEE6}
 .screen{position:fixed;inset:0;display:none;flex-direction:column}
 .screen.active{display:flex}
@@ -264,6 +265,35 @@ select.chip{cursor:pointer}
 .toast{position:fixed;bottom:28px;left:50%;transform:translate(-50%,20px);background:#F2EEE6;color:#111214;padding:12px 20px;border-radius:12px;font-weight:700;font-size:16px;opacity:0;pointer-events:none;transition:.25s;z-index:60;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
+/* web search */
+.webBody{flex:1;display:flex;min-height:0}
+.wSearch{flex:1;max-width:560px;height:46px;padding:0 14px;display:flex;align-items:center;gap:10px;background:var(--fld);border:1px solid var(--ln2);border-radius:12px;color:var(--mu)}
+.wSearch input{flex:1;min-width:0;background:transparent;border:0;outline:none;font-size:17px;color:var(--tx)}
+.wRes{width:400px;border-left:1px solid var(--ln);padding:16px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.wItem{padding:12px 14px;background:var(--p1);border:1px solid #2A2D33;border-radius:12px;text-align:right;color:var(--tx);display:flex;flex-direction:column;gap:4px;width:100%;flex-shrink:0}
+.wItem.on{border-color:var(--am);background:var(--amT)}
+.wItem b{font-family:var(--ti);font-size:16px;font-weight:600;line-height:1.3}
+.wItem .dom{font-size:12px;color:var(--mu2);direction:ltr;text-align:right}
+.wItem .dom.known{color:#9BE3B5}
+.wItem .sn{font-size:13px;color:var(--mu);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wPrev{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;background:#0C0D0F}
+.wScroll{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.wMeta{width:100%;max-width:660px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.wMeta .field{flex:1;min-width:160px}
+.wFoot{padding:12px 20px;border-top:1px solid var(--ln);display:flex;gap:10px;align-items:center;background:var(--p2);flex-wrap:wrap}
+.wFoot select{width:auto;min-width:160px}
+.wMsg{max-width:520px;text-align:center;color:var(--mu);font-size:16px;line-height:1.6;padding:50px 20px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.wMsg h2{margin:0;color:var(--tx);font-family:var(--ti);font-weight:600;font-size:24px}
+.pBrk{display:none}
+@media (max-width:900px){
+ .pBar{flex-wrap:wrap;height:auto;padding:10px 12px;row-gap:10px;justify-content:center;border-radius:20px}
+ .pBar .vsep{display:none}
+ .pBrk{display:block;flex-basis:100%;height:0}
+ .pBarWrap{bottom:14px}
+ .webBody{flex-direction:column}
+ .wRes{width:auto;max-height:36vh;border-left:0;border-bottom:1px solid var(--ln)}
+ #web .h1{display:none}
+}
 @media (max-width:1050px){.nav{width:214px}.search{width:210px}.brand span{display:none}.hideS{display:none}.struct{display:none}.style{width:260px}.pNext{display:none}.impSide{width:300px}.legend{display:none}}
 @media (max-width:760px){.thumbs{display:none}.nav{width:170px}.style{display:none}.pBar{gap:6px;padding:0 8px}.pb{width:42px;height:42px}.pInner{padding-left:28px;padding-right:40px}.search{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation-duration:.01s!important}}
@@ -276,6 +306,7 @@ select.chip{cursor:pointer}
     <div class="brand"><img class="logoImg" src="logo.png" alt="RocknRona"><span>פרומפטר מילים</span></div>
     <div class="flex1"></div>
     <label class="search"><i data-ic="search" data-s="18"></i><input id="q" type="search" placeholder="חיפוש שיר, אמן או שורה…" aria-label="חיפוש"></label>
+    <button class="btn" id="libWeb"><i data-ic="globe" data-s="18"></i><span class="hideS">חיפוש ברשת</span></button>
     <button class="btn" id="libImport"><i data-ic="upload" data-s="18"></i><span class="hideS">ייבוא PDF</span></button>
     <button class="btn pri" id="libNew"><i data-ic="plus" data-s="18"></i>שיר חדש</button>
   </header>
@@ -328,6 +359,7 @@ select.chip{cursor:pointer}
       <button class="pb clear" id="pNext" aria-label="שיר הבא"><i data-ic="next" data-s="24"></i></button>
       <div class="vsep"></div>
       <button class="pb wide mode" id="pMode" aria-pressed="false"><i data-ic="hand" data-s="18"></i><span>גלילה ידנית</span></button>
+      <div class="pBrk"></div>
       <div class="vsep onlyAuto"></div>
       <button class="pb onlyAuto" id="pSlow" aria-label="האט גלילה">−</button>
       <div class="spd onlyAuto"><b id="pSpd">1.0×</b><small>מהירות</small></div>
@@ -359,6 +391,19 @@ select.chip{cursor:pointer}
     <div class="ok" id="impStatus"></div>
   </header>
   <div class="impBody" id="impBody"></div>
+</section>
+
+<section id="web" class="screen">
+  <header class="hdr">
+    <button class="ib" id="webClose" aria-label="סגור"><i data-ic="close" data-s="18"></i></button>
+    <h1 class="h1">חיפוש מילים ברשת</h1>
+    <label class="wSearch"><i data-ic="search" data-s="18"></i><input id="wq" type="search" enterkeyhint="search" placeholder="שם השיר ושם הזמר…" aria-label="חיפוש מילים"></label>
+    <button class="btn pri" id="wGo">חפש</button>
+  </header>
+  <div class="webBody">
+    <aside class="wRes scroll" id="wRes"></aside>
+    <main class="wPrev" id="wPrev"></main>
+  </div>
 </section>
 
 <div id="modalWrap" class="modal-wrap" hidden><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
@@ -414,6 +459,8 @@ const ICON={
  invert:SV+'<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>',
  text:SV+'<path d="M4 7V5h16v2"/><path d="M12 5v14"/><path d="M9 19h6"/></svg>',
  hand:SV+'<path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/></svg>',
+ globe:SV+'<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/></svg>',
+ ext:SV+'<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
  move:SV+'<path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 13h6"/><path d="M13 10l3 3-3 3"/></svg>'
 };
 function ic(n,s){s=s||20;return (ICON[n]||'').replace('<svg','<svg width="'+s+'" height="'+s+'"')}
@@ -594,7 +641,7 @@ function renderLib(){
  const G=$('#grid');
  if(!list.length){
   G.innerHTML=$('#q').value?'<div class="emptyLib"><h2>לא נמצאו שירים</h2><p>נסה מילה אחרת מהשם או מהמילים.</p></div>':
-   '<div class="emptyLib"><h2>אין עדיין שירים כאן</h2><p>כתוב שיר חדש או ייבא קובץ PDF עם מילים.</p><div><button class="btn pri" id="emptyNew">'+ic('plus',18)+'שיר חדש</button><button class="btn" id="emptyImp">'+ic('upload',18)+'ייבוא PDF</button></div></div>';
+   '<div class="emptyLib"><h2>אין עדיין שירים כאן</h2><p>כתוב שיר חדש או ייבא קובץ PDF עם מילים.</p><div><button class="btn pri" id="emptyNew">'+ic('plus',18)+'שיר חדש</button><button class="btn" id="emptyWeb">'+ic('globe',18)+'חיפוש ברשת</button><button class="btn" id="emptyImp">'+ic('upload',18)+'ייבוא PDF</button></div></div>';
  }else G.innerHTML=list.map((s,i)=>card(s,i,list.length,reorder)).join('');
 
  $('#setbar').innerHTML=list.length?'<div class="setbar">'+ic('list',22)+'<div class="flex1 sbTxt"><b>'+(list.length===1?'שיר אחד':list.length+' שירים')+' בסט</b><span>'+esc(list.slice(0,4).map(s=>s.title).join(' ← '))+(list.length>4?' ← …':'')+'</span></div><button class="btn pri" id="startSet">'+ic('play',16)+'התחל הופעה</button></div>':'';
@@ -670,6 +717,7 @@ $('#lib').addEventListener('click',e=>{
  if(t.id==='startSet')return startShow(visibleSongs().map(s=>s.id),0);
  if(t.id==='libNew'||t.id==='emptyNew')return newSong();
  if(t.id==='libImport'||t.id==='emptyImp')return openImp();
+ if(t.id==='libWeb'||t.id==='emptyWeb')return openWeb();
 });
 $('#q').addEventListener('input',()=>{LIB.reorder=false;renderLib()});
 
@@ -1160,6 +1208,206 @@ $('#imp').addEventListener('change',e=>{
 });
 $('#imp').addEventListener('input',e=>{const t=e.target;if(t.dataset.ti)IMP.songs[+t.dataset.ti].title=t.value.trim()||IMP.songs[+t.dataset.ti].title});
 
+/* ========= online lyrics search ========= */
+const HTTP={n:0,cb:{}};
+const CAN_HTTP=!!(window.Android&&window.Android.httpGet);
+function httpGet(url){
+ return new Promise((res,rej)=>{
+  if(url.startsWith('demo:'))return setTimeout(()=>res({text:demoPage(),url}),400);
+  if(!CAN_HTTP)return rej(new Error('nonative'));
+  const id='h'+(++HTTP.n);HTTP.cb[id]={res,rej};
+  try{window.Android.httpGet(id,url)}catch(e){delete HTTP.cb[id];return rej(e)}
+  setTimeout(()=>{if(HTTP.cb[id]){delete HTTP.cb[id];rej(new Error('timeout'))}},25000);
+ });
+}
+window.__httpDone=function(id,ok,text,finalUrl){const c=HTTP.cb[id];if(!c)return;delete HTTP.cb[id];if(ok)c.res({text:text,url:finalUrl});else c.rej(new Error(text))};
+function demoPage(){
+ const s=sampleSong(null),L=[];
+ s.parts.forEach(p=>{const src=srcOf(s,p);if(src&&src.type!=='note')L.push(src.text)});
+ return '<html><head><title>אור ראשון – שיר לדוגמה</title></head><body><div class="lyrics">'+L.map(t=>t.split('\n').map(esc).join('<br>')).join('<br>')+'</div></body></html>';
+}
+const KNOWN=/shironet|genius\.com|azlyrics|lyrics\.com|letras|musixmatch|tab4u|nagnu|zemereshet|songlyrics|lyricsfreak|lyricstranslate|lyrics\.az|shir\.co|sheeronet/i;
+const SKIP=/youtube\.|youtu\.be|spotify\.|facebook\.|instagram\.|tiktok\.|music\.apple|deezer\.|twitter\.|\/\/x\.com|soundcloud\.|wikipedia\.|pinterest\.|amazon\./i;
+const hostOf=u=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch(e){return ''}};
+function parseDDG(html){
+ const d=new DOMParser().parseFromString(html,'text/html');
+ return $$('.result',d).filter(r=>!r.classList.contains('result--ad')).map(r=>{
+  const a=$('a.result__a',r);if(!a)return null;
+  let href=a.getAttribute('href')||'';const m=href.match(/[?&]uddg=([^&]+)/);if(m)href=decodeURIComponent(m[1]);
+  if(href.startsWith('//'))href='https:'+href;
+  const sn=$('.result__snippet',r);
+  return {title:a.textContent.trim(),url:href,snippet:sn?sn.textContent.trim():''};
+ }).filter(Boolean);
+}
+function parseBing(html){
+ const d=new DOMParser().parseFromString(html,'text/html');
+ return $$('li.b_algo',d).map(li=>{
+  const a=$('h2 a',li);if(!a)return null;
+  let href=a.getAttribute('href')||'';const m=href.match(/[?&]u=a1([^&]+)/);
+  if(m){try{let b=decodeURIComponent(m[1]).replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';href=atob(b)}catch(e){}}
+  const sn=$('.b_caption p',li)||$('p',li);
+  return {title:a.textContent.trim(),url:href,snippet:sn?sn.textContent.trim():''};
+ }).filter(Boolean);
+}
+async function webSearch(q){
+ if(!CAN_HTTP)return [{title:'אור ראשון – שיר לדוגמה',url:'demo:1',snippet:'בתצוגה המקדימה אין גישה לאתרים. באפליקציה בטאבלט יופיעו כאן תוצאות אמיתיות מכל אתרי המילים.',demo:true}];
+ const qq=q+(HEB.test(q)?' מילים לשיר':' lyrics');
+ let res=[];
+ try{res=parseDDG((await httpGet('https://html.duckduckgo.com/html/?q='+encodeURIComponent(qq)+'&kl=il-he')).text)}catch(e){}
+ if(res.length<4){try{res=res.concat(parseBing((await httpGet('https://www.bing.com/search?q='+encodeURIComponent(qq)+'&setlang=he&cc=IL')).text))}catch(e){}}
+ const seen=new Set();
+ res=res.filter(r=>/^https?:/.test(r.url)&&!SKIP.test(r.url)&&!seen.has(r.url)&&seen.add(r.url));
+ res.forEach(r=>r.known=KNOWN.test(r.url));
+ res.sort((a,b)=>(b.known?1:0)-(a.known?1:0));
+ return res.slice(0,20);
+}
+const SITE_SEL=[
+ [/shironet/,'.artist_lyrics_text'],
+ [/genius\.com/,'[data-lyrics-container="true"]'],
+ [/azlyrics/,'.ringtone ~ div:not([class])'],
+ [/lyrics\.com/,'#lyric-body-text'],
+ [/letras/,'.lyric-original'],
+ [/musixmatch/,'.lyrics__content__ok'],
+ [/tab4u/,'#songContentTPL']
+];
+const CHORD_LINE=/^(\s*[A-H][#b♯♭]?(m|maj|min|dim|aug|sus|add|M)?\d*(\/[A-H][#b]?)?\s*)+$/;
+function nodeText(el){
+ let out='';
+ const walk=n=>{
+  if(n.nodeType===3){out+=n.nodeValue.replace(/[\t\r\n]+/g,' ');return}
+  if(n.nodeType!==1)return;
+  const tg=n.tagName.toUpperCase();
+  if(/^(SCRIPT|STYLE|NOSCRIPT|BUTTON|SELECT|IFRAME|SVG|FORM|INPUT)$/.test(tg))return;
+  if(n.classList&&(n.classList.contains('chords')||n.classList.contains('chords_en')))return;
+  if(tg==='BR'){out+='\n';return}
+  const blk=/^(DIV|LI|TR|H\d|SECTION|ARTICLE|TABLE|PRE|BLOCKQUOTE)$/.test(tg),para=tg==='P';
+  if(para)out+='\n\n';else if(blk)out+='\n';
+  n.childNodes.forEach(walk);
+  if(para)out+='\n\n';else if(blk)out+='\n';
+ };
+ walk(el);return out;
+}
+function cleanLyr(t){
+ const L=t.replace(/\u00a0/g,' ').split('\n').map(l=>l.replace(/\s+/g,' ').trim()).filter(l=>!CHORD_LINE.test(l)||!l);
+ return L.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+function bestBlock(d){
+ let best=null,bs=0;
+ $$('div,p,span,pre,td,section,article',d.body).forEach(el=>{
+  let score=el.querySelectorAll(':scope > br').length;
+  if(el.tagName==='PRE')score=(el.textContent.match(/\n/g)||[]).length;
+  const ps=el.querySelectorAll(':scope > p');
+  if(ps.length>=2){let pb=0;ps.forEach(p=>pb+=p.querySelectorAll('br').length+1);score=Math.max(score,pb)}
+  if(score<4)return;
+  const txt=el.textContent||'';const links=$$('a',el).reduce((a,x)=>a+x.textContent.length,0);
+  if(links>txt.length*.3)return;
+  if(txt.length/(score+1)>90)return;
+  if(score>bs){bs=score;best=el}
+ });
+ return best;
+}
+function addBreaks(text){
+ if(/\n\s*\n/.test(text))return text;
+ const L=text.split('\n').map(s=>s.trim()).filter(Boolean);if(L.length<8)return text;
+ const K=L.map(s=>s.replace(/[^\p{L}\p{N} ]/gu,'').toLowerCase());
+ const br=new Set();
+ for(let w=6;w>=2&&!br.size;w--){
+  for(let i=0;i+w<=K.length;i++){const seq=K.slice(i,i+w).join('|');
+   for(let j=i+w;j+w<=K.length;j++){if(K.slice(j,j+w).join('|')===seq){br.add(i);br.add(i+w);br.add(j);br.add(j+w)}}}
+ }
+ const cuts=[...br].filter(x=>x>0&&x<L.length).sort((a,b)=>a-b);
+ const segs=[];let st=0;cuts.concat([L.length]).forEach(c=>{if(c>st){segs.push(L.slice(st,c));st=c}});
+ const out=[];segs.forEach(sg=>{if(sg.length>6){for(let k=0;k<sg.length;k+=4)out.push(sg.slice(k,k+4))}else out.push(sg)});
+ return out.map(x=>x.join('\n')).join('\n\n');
+}
+function parseTitle(t){
+ t=(t||'').replace(/\s+/g,' ').trim();let m;
+ if((m=t.match(/מילים לשיר\s+(.+?)\s+-\s+(.+?)\s+-/)))return {title:m[1],artist:m[2]};
+ if((m=t.match(/^(.+?)\s+[-–]\s+(.+?)\s+(lyrics|מילים)/i)))return {title:m[2],artist:m[1]};
+ t=t.replace(/\s*[|–-]\s*[^|–-]*$/,'').replace(/^(מילים לשיר|מילים ל|lyrics)\s*/i,'').replace(/\s*(lyrics|מילים)$/i,'').trim();
+ return {title:t,artist:''};
+}
+function extractLyrics(html,url){
+ const d=new DOMParser().parseFromString(html,'text/html');
+ $$('script,style,noscript,header,footer,nav,aside,form,iframe',d).forEach(e=>e.remove());
+ let txt='';
+ const rule=SITE_SEL.find(r=>r[0].test(url));
+ if(rule){const els=$$(rule[1],d);if(els.length)txt=cleanLyr(els.map(nodeText).join('\n\n'))}
+ if(txt.split('\n').filter(Boolean).length<4){const b=bestBlock(d);txt=b?cleanLyr(nodeText(b)):''}
+ const og=d.querySelector('meta[property="og:title"]');
+ return {text:addBreaks(txt),meta:parseTitle((og&&og.getAttribute('content'))||d.title)};
+}
+
+const WEB={q:'',res:[],sel:-1,busy:false,loading:false,cur:null,view:'split',folder:'',saved:null,tok:null};
+function openWeb(){WEB.folder=S.folders.some(x=>x.id===S.ui.folder)?S.ui.folder:'';show('web');renderWebRes();renderWebPrev();setTimeout(()=>$('#wq').focus(),80)}
+function closeWeb(){WEB.tok=null;show('lib');renderLib()}
+async function doWebSearch(){
+ const q=$('#wq').value.trim();if(!q)return toast('כתוב שם של שיר או זמר');
+ $('#wq').blur();WEB.q=q;WEB.busy=true;WEB.res=[];WEB.sel=-1;WEB.cur=null;renderWebRes();renderWebPrev();
+ try{WEB.res=await webSearch(q)}catch(e){WEB.res=[]}
+ WEB.busy=false;renderWebRes();renderWebPrev();
+ if(WEB.res.length&&window.innerWidth>900)pickWeb(0);
+}
+function renderWebRes(){
+ const E=$('#wRes');
+ if(WEB.busy){E.innerHTML='<div class="wMsg"><span class="spin big"></span>מחפש באתרי מילים…</div>';return}
+ if(!WEB.q){E.innerHTML='<div class="hint">חפש לפי שם השיר, ואפשר להוסיף את שם הזמר לתוצאות מדויקות יותר.</div>';return}
+ if(!WEB.res.length){E.innerHTML='<div class="wMsg">לא נמצאו תוצאות. בדוק את החיבור לאינטרנט או נסה ניסוח אחר.</div>';return}
+ E.innerHTML=WEB.res.map((r,i)=>'<button class="wItem'+(WEB.sel===i?' on':'')+'" data-wi="'+i+'"><b>'+esc(r.title)+'</b><span class="dom'+(r.known?' known':'')+'">'+esc(r.demo?'תצוגה מקדימה':hostOf(r.url))+'</span>'+(r.snippet?'<span class="sn">'+esc(r.snippet)+'</span>':'')+'</button>').join('');
+}
+async function pickWeb(i){
+ WEB.sel=i;WEB.cur=null;WEB.saved=null;WEB.loading=true;WEB.view='split';const tok=WEB.tok=uid();
+ renderWebRes();renderWebPrev();
+ const r=WEB.res[i];
+ try{
+  const page=await httpGet(r.url);if(tok!==WEB.tok)return;
+  const ex=extractLyrics(page.text,page.url||r.url);
+  const meta=ex.meta.title?ex.meta:parseTitle(r.title);
+  WEB.cur={url:r.url,text:ex.text,title:meta.title||parseTitle(r.title).title,artist:meta.artist||'',parts:autoSplit(ex.text)};
+ }catch(e){if(tok!==WEB.tok)return;WEB.cur={error:true,url:r.url}}
+ WEB.loading=false;renderWebPrev();
+}
+function renderWebPrev(){
+ const E=$('#wPrev'),c=WEB.cur;
+ if(WEB.loading){E.innerHTML='<div class="wScroll"><div class="wMsg"><span class="spin big"></span>קורא את הדף ומזהה את המילים…</div></div>';return}
+ if(!c){E.innerHTML='<div class="wScroll"><div class="wMsg"><h2>חיפוש מילים ברשת</h2>'+(WEB.res.length?'בחר תוצאה כדי לראות את המילים שזוהו.':'המילים נשלפות מהדף, מחולקות לבתים ולפזמונים לפי המרווחים והחזרות, ונשמרות בספרייה שלך. תמיד אפשר לתקן לפני השמירה.')+'</div></div>';return}
+ const openBtn=c.url&&!c.url.startsWith('demo:')?'<button class="btn sm" id="wOpen">'+ic('ext',16)+'פתח את הדף</button>':'';
+ if(c.error||!c.text||c.text.split('\n').filter(Boolean).length<3){
+  E.innerHTML='<div class="wScroll"><div class="wMsg"><h2>לא זוהו מילים בדף הזה</h2>ייתכן שהאתר חוסם גישה או שהמילים לא נמצאות בדף. נסה תוצאה אחרת.'+openBtn+'</div></div>';return;
+ }
+ const L=labelMap({parts:c.parts});
+ const body=WEB.view==='edit'?
+  '<textarea class="bigText" id="wText" style="max-width:660px;min-height:50vh" spellcheck="false">'+esc(c.text)+'</textarea><div class="hint" style="max-width:660px">שורה ריקה מפרידה בין חלקים. אחרי התיקון לחץ "חלק מחדש".</div>':
+  '<div class="txtView">'+c.parts.map(p=>{const src=p.ref?c.parts.find(q=>q.id===p.ref):p;if(!src)return '';return '<div class="tvPart"><span class="chip t-'+src.type+'">'+esc(L[p.id])+'</span>'+(p.ref?'<span class="tvRep">חוזר</span>':'<div class="tvTxt c-'+src.type+'">'+esc(src.text)+'</div>')+'</div>'}).join('')+'</div>';
+ E.innerHTML='<div class="wScroll"><div class="wMeta"><input class="field" id="wTitle" value="'+esc(c.title)+'" aria-label="שם השיר" placeholder="שם השיר"><input class="field" id="wArtist" value="'+esc(c.artist)+'" aria-label="שם הזמר" placeholder="שם הזמר"></div>'+
+  '<div class="wMeta"><div class="seg"><button data-wv="split" class="'+(WEB.view==='split'?'on':'')+'">החלוקה שזוהתה</button><button data-wv="edit" class="'+(WEB.view==='edit'?'on':'')+'">עריכת טקסט</button></div><span class="hint">'+esc(summarize(c.parts))+'</span><span class="flex1"></span>'+openBtn+'</div>'+body+'</div>'+
+  '<div class="wFoot">'+(WEB.view==='edit'?'<button class="btn" id="wResplit">'+ic('repeat',16)+'חלק מחדש</button>':'')+
+  '<select class="field" id="wFolder" aria-label="תיקייה"><option value="">ללא תיקייה</option>'+S.folders.map(f=>'<option value="'+f.id+'"'+(WEB.folder===f.id?' selected':'')+'>'+esc(f.name)+'</option>').join('')+'</select><span class="flex1"></span>'+
+  (WEB.saved?'<button class="btn" id="wEdit">'+ic('edit',16)+'פתח בעורך</button><button class="btn" disabled>'+ic('check',16)+'נשמר</button>':'<button class="btn pri" id="wSave">'+ic('check',18)+'שמור לספרייה</button>')+'</div>';
+}
+function saveWeb(){
+ const c=WEB.cur;if(!c)return;
+ if(WEB.view==='edit'&&$('#wText')){c.text=$('#wText').value;c.parts=autoSplit(c.text)}
+ if(!c.parts.length)return toast('אין מילים לשמירה');
+ const s=newSongObj({title:c.title||'שיר חדש',artist:c.artist||'',folderId:WEB.folder||null});
+ s.parts=c.parts.map(p=>Object.assign({},p));S.songs.push(s);save(true);
+ WEB.saved=s.id;renderWebPrev();toast('השיר נשמר בספרייה');
+}
+$('#web').addEventListener('click',e=>{
+ const t=e.target.closest('button');if(!t)return;const d=t.dataset;
+ if(t.id==='webClose')return closeWeb();
+ if(t.id==='wGo')return doWebSearch();
+ if(d.wi)return pickWeb(+d.wi);
+ if(d.wv){if(WEB.view==='edit'&&$('#wText')){WEB.cur.text=$('#wText').value;WEB.cur.parts=autoSplit(WEB.cur.text)}WEB.view=d.wv;return renderWebPrev()}
+ if(t.id==='wResplit'){WEB.cur.text=$('#wText').value;WEB.cur.parts=autoSplit(WEB.cur.text);WEB.view='split';renderWebPrev();return toast('חולק מחדש')}
+ if(t.id==='wSave')return saveWeb();
+ if(t.id==='wEdit'){const id=WEB.saved;WEB.tok=null;return openEditor(id)}
+ if(t.id==='wOpen'){const u=WEB.cur.url;if(window.Android&&window.Android.openUrl)window.Android.openUrl(u);else window.open(u,'_blank','noopener');}
+});
+$('#web').addEventListener('input',e=>{const t=e.target,c=WEB.cur;if(!c)return;if(t.id==='wTitle')c.title=t.value;else if(t.id==='wArtist')c.artist=t.value;else if(t.id==='wText')c.text=t.value});
+$('#web').addEventListener('change',e=>{if(e.target.id==='wFolder')WEB.folder=e.target.value});
+$('#wq').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doWebSearch()}});
+
 /* ========= native bridge ========= */
 let _pdfName='',_chunks=[];
 window.__pdfBegin=function(name){_pdfName=name;_chunks=[];if(SCREEN!=='imp')openImp();IMP.busy=true;IMP.name=name;renderImp()};
@@ -1175,6 +1423,7 @@ window.appBack=function(){
  if(SCREEN==='play'){exitShow();return true}
  if(SCREEN==='edit'){closeEditor();return true}
  if(SCREEN==='imp'){closeImp();return true}
+ if(SCREEN==='web'){closeWeb();return true}
  return false;
 };
 

@@ -26,6 +26,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.webkit.WebViewAssetLoader
 import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
+import java.nio.charset.Charset
 import kotlin.concurrent.thread
 
 class MainActivity : ComponentActivity() {
@@ -232,6 +235,59 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val userAgent =
+        "Mozilla/5.0 (Linux; Android 14; Tablet) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36"
+
+    /** Fetch a web page natively (no CORS) and hand the HTML back to the page. */
+    private fun fetchPage(id: String, url: String) {
+        try {
+            var u = URL(url)
+            var conn: HttpURLConnection
+            var hops = 0
+            while (true) {
+                conn = u.openConnection() as HttpURLConnection
+                conn.instanceFollowRedirects = false
+                conn.connectTimeout = 12000
+                conn.readTimeout = 15000
+                conn.setRequestProperty("User-Agent", userAgent)
+                conn.setRequestProperty("Accept", "text/html,application/xhtml+xml,*/*;q=0.8")
+                conn.setRequestProperty("Accept-Language", "he-IL,he;q=0.9,en;q=0.8")
+                val code = conn.responseCode
+                if (code in 300..399 && hops < 8) {
+                    val loc = conn.getHeaderField("Location")
+                    conn.disconnect()
+                    if (loc == null) throw IllegalStateException("redirect")
+                    u = URL(u, loc)
+                    hops++
+                    continue
+                }
+                break
+            }
+            val code = conn.responseCode
+            if (code >= 400) throw IllegalStateException("HTTP $code")
+            var bytes = conn.inputStream.use { it.readBytes() }
+            if (bytes.size > 4 * 1024 * 1024) bytes = bytes.copyOf(4 * 1024 * 1024)
+            val text = String(bytes, charsetOf(conn.contentType, bytes))
+            conn.disconnect()
+            val finalUrl = u.toString()
+            runOnUiThread {
+                js("window.__httpDone(" + JSONObject.quote(id) + ",true," + JSONObject.quote(text) + "," + JSONObject.quote(finalUrl) + ")")
+            }
+        } catch (e: Exception) {
+            val msg = e.message ?: "error"
+            runOnUiThread {
+                js("window.__httpDone(" + JSONObject.quote(id) + ",false," + JSONObject.quote(msg) + ",'')")
+            }
+        }
+    }
+
+    private fun charsetOf(contentType: String?, bytes: ByteArray): Charset {
+        val rx = Regex("charset=[\"']?([\\w-]+)", RegexOption.IGNORE_CASE)
+        val name = contentType?.let { rx.find(it)?.groupValues?.get(1) }
+            ?: rx.find(String(bytes, 0, minOf(bytes.size, 4096), Charsets.ISO_8859_1))?.groupValues?.get(1)
+        return try { if (name != null) Charset.forName(name) else Charsets.UTF_8 } catch (_: Exception) { Charsets.UTF_8 }
+    }
+
     inner class Bridge {
         @JavascriptInterface
         fun pickPdf(source: String) {
@@ -243,6 +299,18 @@ class MainActivity : ComponentActivity() {
             runOnUiThread {
                 if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+        }
+
+        @JavascriptInterface
+        fun httpGet(id: String, url: String) {
+            thread { fetchPage(id, url) }
+        }
+
+        @JavascriptInterface
+        fun openUrl(url: String) {
+            runOnUiThread {
+                try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (_: Exception) {}
             }
         }
 
