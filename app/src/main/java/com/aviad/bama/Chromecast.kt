@@ -147,6 +147,20 @@ class Chromecast(context: Context, private val listener: Listener) {
         private var out: OutputStream? = null
         private var appSession: String? = null
         private var reqId = 1
+        @Volatile private var urlSent = false
+
+        @Synchronized
+        private fun sendUrl(t: String) {
+            if (urlSent || !alive) return
+            urlSent = true
+            try {
+                Thread.sleep(400)
+                send(t, NS_DASH, JSONObject().put("url", url).put("force", true).put("reload", false).put("reload_time", 0))
+                status(this, "casting", "משדר ל-${device.name}")
+            } catch (e: Exception) {
+                status(this, "error", "לא ניתן לשלוח את התצוגה ל-${device.name}")
+            }
+        }
 
         fun run() {
             status(this, "connecting", "מתחבר ל-${device.name}…")
@@ -198,13 +212,22 @@ class Chromecast(context: Context, private val listener: Listener) {
                                     if (ns == NS_RECV && t.isNotEmpty() && t != transport) {
                                         transport = t
                                         send(t, NS_CONN, JSONObject().put("type", "CONNECT"))
-                                        Thread.sleep(700)
-                                        send(t, NS_DASH, JSONObject().put("url", url).put("force", true).put("reload", false).put("reload_time", 0))
-                                        status(this, "casting", "משדר ל-${device.name}")
+                                        // Fallback: if the receiver never lists its namespace, send anyway.
+                                        thread(isDaemon = true) {
+                                            try { Thread.sleep(3500) } catch (_: Exception) { }
+                                            if (alive && !urlSent) sendUrl(t)
+                                        }
                                     }
+                                    val nss = a.optJSONArray("namespaces")
+                                    var ready = false
+                                    if (nss != null) for (k in 0 until nss.length()) {
+                                        if (nss.optJSONObject(k)?.optString("name") == NS_DASH) ready = true
+                                    }
+                                    val tr = transport
+                                    if (ready && !urlSent && tr != null) sendUrl(tr)
                                 }
                             }
-                            if (!found && transport != null) {
+                            if (!found && transport != null && !urlSent) {
                                 status(this, "stopped", "השידור ב-${device.name} הופסק")
                                 alive = false
                             }
@@ -249,7 +272,7 @@ class Chromecast(context: Context, private val listener: Listener) {
         const val NS_CONN = "urn:x-cast:com.google.cast.tp.connection"
         const val NS_HB = "urn:x-cast:com.google.cast.tp.heartbeat"
         const val NS_RECV = "urn:x-cast:com.google.cast.receiver"
-        const val NS_DASH = "urn:x-cast:es.offd.dashcast"
+        const val NS_DASH = "urn:x-cast:com.madmod.dashcast"
 
         private object TrustAll : X509TrustManager {
             override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
