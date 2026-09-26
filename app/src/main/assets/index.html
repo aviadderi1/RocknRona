@@ -233,6 +233,12 @@ select.chip{cursor:pointer}
 .castBox{background:#141518;border:1px solid var(--ln2);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
 .castBox b{font-size:16px}
 .castBox p{margin:0;color:var(--mu);font-size:14px;line-height:1.6}
+.ccList{display:flex;flex-direction:column;gap:8px}
+.ccDev{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--p1);border:1px solid #2A2D33;border-radius:12px;color:#8FD0FF}
+.ccDev.on{border-color:#2F6A96;background:#122434}
+.ccDev b{display:block;color:var(--tx);font-size:16px}
+.ccDev small{display:block;color:var(--mu);font-size:13px}
+.castBox .row .btn .spin{width:16px;height:16px;border-width:2px}
 .castUrl{direction:ltr;text-align:center;font-size:24px;font-weight:800;color:#F4C77A;letter-spacing:.3px;padding:6px 0;-webkit-user-select:text;user-select:text}
 .castQr{align-self:center;background:#fff;border-radius:10px;padding:8px;line-height:0}
 .castQr img{width:150px;height:150px;image-rendering:pixelated}
@@ -1249,6 +1255,7 @@ function castStart(){
  CAST.on=true;CAST.last='';$('#pCast').classList.add('on');keepAwake(true);castSend();
 }
 function castStop(){
+ if(CC.active)ccStop();CC.active=null;CC.state='';
  CAST.on=false;clearTimeout(CAST.t);CAST.t=0;$('#pCast').classList.remove('on');
  if(CAN_CAST){try{window.Android.castStop()}catch(e){}}
  const w=$('#castWin');if(w)w.remove();
@@ -1257,6 +1264,42 @@ function castStop(){
 function qrImg(text){
  try{if(!window.qrcode)return '';const q=qrcode(0,'M');q.addData(text);q.make();return '<div class="castQr">'+q.createImgTag(5,0).replace('<img','<img alt="קוד QR לכתובת"')+'</div>'}catch(e){return ''}
 }
+const CC={scanning:false,scanned:false,devices:[],active:null,state:'',msg:''};
+const CAN_CC=!!(window.Android&&window.Android.ccScan);
+function ccScan(){
+ CC.scanning=true;CC.scanned=true;CC.devices=[];renderCast();
+ if(CAN_CC){try{window.Android.ccScan()}catch(e){CC.scanning=false;renderCast()}return}
+ setTimeout(()=>window.__ccDevices([{id:'d1',name:'סלון',model:'Chromecast'}],true),700);
+ setTimeout(()=>window.__ccDevices([{id:'d1',name:'סלון',model:'Chromecast'},{id:'d2',name:'חדר חזרות',model:'Google TV Streamer'}],false),1800);
+}
+function ccCast(id){
+ CC.active=id;CC.state='connecting';CC.msg='מתחבר…';renderCast();
+ if(CAN_CC){try{window.Android.ccCast(id)}catch(e){}return}
+ const d=CC.devices.find(x=>x.id===id);
+ setTimeout(()=>window.__ccStatus(id,'casting','משדר ל-'+(d?d.name:'')),1200);
+}
+function ccStop(){if(CAN_CC){try{window.Android.ccStop()}catch(e){}}else window.__ccStatus(CC.active,'stopped','השידור הופסק')}
+window.__ccDevices=function(list,scanning){CC.devices=list||[];CC.scanning=!!scanning;renderCast()};
+window.__ccStatus=function(id,state,msg){
+ if(state==='stopped'||state==='error'){if(CC.active===id||!id){CC.active=null;CC.state=''}if(state==='error'||SCREEN==='play')toast(msg)}
+ else{CC.active=id;CC.state=state;CC.msg=msg;if(state==='casting')toast(msg)}
+ $('#pCast').classList.toggle('on',CAST.on);renderCast();
+};
+function ccHtml(){
+ const btn='<button class="btn sm" id="ccScan"'+(CC.scanning?' disabled':'')+'>'+(CC.scanning?'<span class="spin"></span>סורק…':ic('search',16)+'סרוק')+'</button>';
+ let list='';
+ if(CC.devices.length)list='<div class="ccList">'+CC.devices.map(d=>{
+  const on=CC.active===d.id,st=on?CC.state:'';
+  return '<div class="ccDev'+(on?' on':'')+'">'+ic('cast',22)+'<div class="flex1"><b>'+esc(d.name)+'</b><small>'+esc(d.model||'Chromecast')+(st==='connecting'?' · מתחבר…':st==='casting'?' · משדר עכשיו':'')+'</small></div>'+
+   (on&&st==='casting'?'<button class="btn sm" data-ccstop="1" style="color:#FF9A8F">נתק</button>':on?'<span class="spin"></span>':'<button class="btn sm pri" data-cc="'+esc(d.id)+'">שדר</button>')+'</div>'}).join('')+'</div>';
+ else if(CC.scanned&&!CC.scanning)list='<p>לא נמצאו מכשירי Chromecast. ודא שהטאבלט וה-Chromecast מחוברים לאותה רשת Wi-Fi, ולחץ שוב על "סרוק".</p>';
+ else if(!CC.scanned)list='<p>לחץ על "סרוק" כדי למצוא מכשירי Chromecast ו-Google TV ברשת. בחר מכשיר, ומסך ההופעה יוצג עליו ויעקוב אחרי הטאבלט.</p>';
+ return '<div class="castBox"><div class="row"><b class="flex1">Chromecast</b>'+btn+'</div>'+list+'</div>';
+}
+function renderCast(){
+ const m=$('#modal');if($('#modalWrap').hidden||!m.querySelector('.castHead'))return;
+ const box=$('#ccBox');if(box)box.innerHTML=ccHtml();
+}
 function castModal(){
  if(!CAST.on)castStart();
  if(!CAST.on)return;
@@ -1264,12 +1307,14 @@ function castModal(){
  const I=CAST.info||{},url=I.ips&&I.ips.length?'http://'+I.ips[0]+':'+I.port:'';
  const disp=I.display?'<div class="castStat"><span class="castDot"></span>מחובר ל-'+esc(I.display)+' – המילים מוצגות עליו</div>':'<p>חבר טלוויזיה או מקרן בשידור מסך אלחוטי (Miracast / Smart View) או בכבל HDMI. כשהמסך מתחבר, המילים יופיעו עליו אוטומטית במסך מלא – בלי סרגל הכלים.</p>';
  const net=url?'<p>בכל מכשיר עם דפדפן שמחובר לאותה רשת Wi-Fi – טלוויזיה חכמה, טאבלט נוסף או מחשב – פתח את הכתובת או סרוק את הקוד:</p><div class="castUrl">'+esc(url)+'</div>'+qrImg(url)+(CAST.sim?'<p>בתצוגה המקדימה הכתובת היא לדוגמה. החלון הקטן בפינה מדמה את המסך השני.</p>':''):'<p>הטאבלט לא מחובר לרשת Wi-Fi. חבר אותו לרשת (או הפעל נקודה חמה) ופתח את החלון הזה שוב.</p>';
- openModal('<h2>שידור למסך נוסף</h2><div class="castStat"><span class="castDot"></span>השידור פעיל – המסך השני עוקב אחרי הטאבלט</div>'+
+ openModal('<h2 class="castHead">שידור למסך נוסף</h2><div class="castStat"><span class="castDot"></span>השידור פעיל – המסך השני עוקב אחרי הטאבלט</div>'+
+  '<div id="ccBox">'+ccHtml()+'</div>'+
   '<div class="castBox"><b>מסך אלחוטי או HDMI</b>'+disp+'</div>'+
   '<div class="castBox"><b>דרך רשת Wi-Fi</b>'+net+'</div>'+
   '<div class="acts"><button class="btn" id="castOff" style="color:#FF9A8F">עצור שידור</button><span class="flex1"></span><button class="btn pri" id="castClose">סגור</button></div>',true);
  $('#castOff').onclick=()=>{castStop();closeModal();toast('השידור הופסק')};
  $('#castClose').onclick=closeModal;
+ $('#ccBox').onclick=e=>{const t=e.target.closest('button');if(!t)return;if(t.id==='ccScan')ccScan();else if(t.dataset.cc)ccCast(t.dataset.cc);else if(t.dataset.ccstop)ccStop()};
 }
 window.__castDisplay=function(name){if(CAST.on){if(CAST.info)CAST.info.display=name||null;toast(name?'מסך מחובר: '+name:'המסך החיצוני נותק')}};
 $('#pCast').onclick=castModal;

@@ -44,6 +44,22 @@ class MainActivity : ComponentActivity() {
     private var fileCallback: ValueCallback<Array<Uri>>? = null
 
     private val cast by lazy { CastServer(applicationContext) }
+    private val ccDevices = LinkedHashMap<String, CastDevice>()
+    private val chromecast by lazy {
+        Chromecast(this, object : Chromecast.Listener {
+            override fun onDevices(list: List<CastDevice>, scanning: Boolean) {
+                list.forEach { ccDevices[it.id] = it }
+                val arr = org.json.JSONArray()
+                list.forEach { arr.put(it.toJson()) }
+                js("window.__ccDevices && window.__ccDevices(" + arr.toString() + "," + scanning + ")")
+            }
+
+            override fun onStatus(deviceId: String?, state: String, message: String) {
+                js("window.__ccStatus && window.__ccStatus(" + JSONObject.quote(deviceId ?: "") + "," +
+                    JSONObject.quote(state) + "," + JSONObject.quote(message) + ")")
+            }
+        })
+    }
     private var casting = false
     private var stage: StagePresentation? = null
     private val displayManager by lazy { getSystemService(Context.DISPLAY_SERVICE) as DisplayManager }
@@ -154,6 +170,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        try { chromecast.stopScan(); chromecast.disconnect() } catch (_: Exception) { }
         stopCast()
         cast.shutdown()
         super.onDestroy()
@@ -231,6 +248,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun stopCast() {
+        try { chromecast.disconnect() } catch (_: Exception) { }
         if (!casting) return
         casting = false
         try { displayManager.unregisterDisplayListener(displayListener) } catch (_: Exception) { }
@@ -430,6 +448,32 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun castStop() {
             runOnUiThread { stopCast() }
+        }
+
+        @JavascriptInterface
+        fun ccScan() {
+            runOnUiThread { chromecast.scan() }
+        }
+
+        @JavascriptInterface
+        fun ccCast(id: String) {
+            runOnUiThread {
+                val d = ccDevices[id] ?: return@runOnUiThread
+                startCast()
+                val ips = CastServer.localIps()
+                val prefix = d.host.substringBeforeLast('.') + "."
+                val ip = ips.firstOrNull { it.startsWith(prefix) } ?: ips.firstOrNull()
+                if (ip == null) {
+                    js("window.__ccStatus(" + JSONObject.quote(id) + ",'error'," + JSONObject.quote("הטאבלט לא מחובר לרשת Wi-Fi") + ")")
+                    return@runOnUiThread
+                }
+                chromecast.cast(d, "http://$ip:${cast.port}/")
+            }
+        }
+
+        @JavascriptInterface
+        fun ccStop() {
+            runOnUiThread { chromecast.disconnect() }
         }
 
         @JavascriptInterface
