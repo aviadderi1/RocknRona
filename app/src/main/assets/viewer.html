@@ -56,7 +56,7 @@ function build(s){
  s.parts.forEach(p=>{
   h+='<div class="part">';
   if(s.labels)h+='<div class="sec" style="color:'+p.c+'">'+esc(p.n)+'</div>';
-  p.x.split('\n').forEach(l=>{h+=l.trim()?'<div class="ln'+(p.t==='note'?' note':'')+'" style="color:'+p.c+'">'+esc(l)+'</div>':'<div class="gap"></div>'});
+  p.x.split('\n').forEach(l=>{h+=l.trim()?'<div class="ln'+(p.t==='note'?' note':'')+'" dir="auto" style="color:'+p.c+'">'+esc(l)+'</div>':'<div class="gap"></div>'});
   if(!s.labels)h+='<div class="gap"></div>';
   h+='</div>';
  });
