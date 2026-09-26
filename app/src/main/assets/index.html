@@ -137,6 +137,8 @@ select.chip{cursor:pointer}
 .block textarea::placeholder{color:#5C5850;font-weight:500}
 .reptext{font-size:18px;color:#6E695F;white-space:pre-line;line-height:1.5}
 .addRow{display:flex;gap:10px;flex-wrap:wrap;flex-shrink:0}
+.addRow.mini{gap:6px;margin:-4px 0 6px}
+.addRow.mini .btn{height:36px;padding:0 11px;font-size:13px;border-radius:9px}
 .ad-verse{color:var(--ve)!important;border-color:#4A4032!important}
 .ad-chorus{color:var(--ch)!important;border-color:#2C4056!important}
 .ad-bridge{color:var(--br)!important;border-color:#43385A!important}
@@ -872,13 +874,15 @@ function renderBlocks(){
   return;
  }
  const L=labelMap(s);
- B.innerHTML=s.parts.map(p=>block(s,p,L)).join('')+'<div class="addRow"><button class="btn dash ad-verse" data-add="verse">+ בית</button><button class="btn dash ad-chorus" data-add="chorus">+ פזמון</button><button class="btn dash ad-bridge" data-add="bridge">+ גשר</button><button class="btn dash ad-note" data-add="note">+ הערה לזמר</button><button class="btn dash ad-chorus" data-repchorus="1">'+ic('repeat',16)+'חזור על פזמון</button></div>';
+ const row=id=>'<div class="addRow mini"><button class="btn dash ad-verse" data-add="verse" data-after="'+id+'">+ בית</button><button class="btn dash ad-chorus" data-add="chorus" data-after="'+id+'">+ פזמון</button><button class="btn dash ad-bridge" data-add="bridge" data-after="'+id+'">+ גשר</button><button class="btn dash ad-note" data-add="note" data-after="'+id+'">+ הערה לזמר</button><button class="btn dash ad-chorus" data-repchorus="1" data-after="'+id+'">'+ic('repeat',15)+'חזור על פזמון</button></div>';
+ B.innerHTML=s.parts.map(p=>block(s,p,L)+row(p.id)).join('');
  $$('#blocks textarea[data-txt]').forEach(autosize);
  B.scrollTop=top;
 }
 function refreshParts(){renderStruct();renderBlocks();updatePreview()}
 function focusPart(id){const b=$('#b-'+id);if(!b)return;b.scrollIntoView({behavior:'smooth',block:'center'});const t=$('textarea',b);if(t)setTimeout(()=>t.focus({preventScroll:true}),250)}
-function addPart(type){const s=curSong();const p={id:uid(),type,text:'',ref:null};s.parts.push(p);touch(s);refreshParts();focusPart(p.id)}
+function insertAt(s,after){const i=after?s.parts.findIndex(x=>x.id===after):-1;return i<0?s.parts.length:i+1}
+function addPart(type,after){const s=curSong();const p={id:uid(),type,text:'',ref:null};s.parts.splice(insertAt(s,after),0,p);touch(s);refreshParts();focusPart(p.id)}
 $('#blocks').addEventListener('input',e=>{
  const t=e.target;if(!t.dataset.txt)return;
  const s=curSong(),p=s.parts.find(x=>x.id===t.dataset.txt);if(!p)return;
@@ -894,9 +898,9 @@ $('#blocks').addEventListener('change',e=>{
 });
 $('#blocks').addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;const d=t.dataset,s=curSong();
- if(d.add)return addPart(d.add);
+ if(d.add)return addPart(d.add,d.after);
  if(t.id==='firstSplit'){const parts=autoSplit($('#firstText').value);if(!parts.length)return toast('כתוב או הדבק קודם את המילים');s.parts=parts;touch(s);refreshParts();return toast('חולק ל-'+parts.length+' חלקים — אפשר לתקן בכל רגע')}
- if(d.repchorus){const ch=s.parts.filter(p=>p.type==='chorus'&&!p.ref).pop();if(!ch)return toast('עדיין אין פזמון בשיר');const p={id:uid(),type:'chorus',text:'',ref:ch.id};s.parts.push(p);touch(s);refreshParts();return focusPart(p.id)}
+ if(d.repchorus){const at=insertAt(s,d.after),all=s.parts.filter(p=>p.type==='chorus'&&!p.ref);const ch=s.parts.slice(0,at).filter(p=>p.type==='chorus'&&!p.ref).pop()||all[0];if(!ch)return toast('עדיין אין פזמון בשיר');const p={id:uid(),type:'chorus',text:'',ref:ch.id};s.parts.splice(at,0,p);touch(s);refreshParts();return focusPart(p.id)}
  if(d.rep){const i=s.parts.findIndex(x=>x.id===d.rep);const src=srcOf(s,s.parts[i]);if(!src)return;s.parts.splice(i+1,0,{id:uid(),type:src.type,text:'',ref:src.id});touch(s);return refreshParts()}
  if(d.unlink){const p=s.parts.find(x=>x.id===d.unlink),src=srcOf(s,p);if(src){p.text=src.text;p.type=src.type}p.ref=null;touch(s);refreshParts();return focusPart(p.id)}
  if(d.del){
