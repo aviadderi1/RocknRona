@@ -1513,11 +1513,18 @@ function parseGeneric(html,base){
  });
  return out;
 }
+function shironetUrl(u){try{const x=new URL(u);if(!/shironet\.mako\.co\.il$/.test(x.hostname))return '';x.hostname='shironet.mako.co.il';x.protocol='https:';return x.href}catch(e){return ''}}
+function shironetFrom(html,base){
+ // direct Shironet pages: parse song links; search engines: keep only Shironet song pages
+ if(/shironet\.mako\.co\.il/.test(base))return parseShironet(html);
+ const b=/bing/.test(base)?parseBing(html):/duckduckgo/.test(base)?parseDDG(html):[];
+ return (b.length?b:parseGeneric(html,base)).map(r=>Object.assign(r,{url:shironetUrl(r.url)})).filter(r=>r.url&&/wrkid=/.test(r.url)&&/type=lyrics/.test(r.url)).map(r=>{const t=parseTitle(r.title);return Object.assign(r,{title:t.title||r.title,artist:t.artist||r.artist||'',snippet:(t.artist?t.artist+' · ':'')+'שירונט'})});
+}
 function parseShironet(html){
  const d=new DOMParser().parseFromString(html,'text/html'),out=[],seen=new Set();
  $$('a[href*="wrkid="]',d).forEach(a=>{
   const href=a.getAttribute('href')||'';if(!/type=lyrics/.test(href))return;
-  let url;try{url=new URL(href,'https://shironet.mako.co.il/').href}catch(e){return}
+  let url;try{url=shironetUrl(new URL(href,'https://shironet.mako.co.il/').href)}catch(e){return}if(!url)return;
   const t=a.textContent.replace(/\s+/g,' ').trim();if(!t)return;
   const m=url.match(/wrkid=(\d+)/);const k=m?m[1]:url;if(seen.has(k))return;seen.add(k);
   let art='';const row=a.closest('tr,li,.search_results_row,div');if(row){const aa=[...row.querySelectorAll('a[href*="prfid="]')].find(x=>!/wrkid=/.test(x.getAttribute('href'))&&x.textContent.trim());if(aa)art=aa.textContent.replace(/\s+/g,' ').trim()}
@@ -1560,8 +1567,17 @@ async function webSearch(song,artist){
  const artistProbe=song&&!artist?deezerArtist(song).then(a=>a?artistSongs(a.name).then(l=>({a,l})):null).catch(()=>null):Promise.resolve(null);
  const q=(song+' '+artist).trim(),heb=HEB.test(q),qq=q+(heb?' מילים לשיר':' lyrics'),E=encodeURIComponent;
  const src=[];
+ // Shironet: several search entry points (site search + search engines restricted to shironet)
+ const shq=song||q,shF=heb;
+ [['שירונט','https://shironet.mako.co.il/search?q='+E(shq)],
+  ['שירונט שירים','https://shironet.mako.co.il/searchSongs?q='+E(shq)+'&type=lyrics'],
+  ['שירונט נייד','https://m.shironet.mako.co.il/search?q='+E(shq)],
+  ['Bing→שירונט','https://www.bing.com/search?q='+E(q+' site:shironet.mako.co.il')+'&setlang=he&cc=IL'],
+  ['DDG→שירונט','https://html.duckduckgo.com/html/?q='+E(q+' site:shironet.mako.co.il')+'&kl=il-he'],
+  ['Yahoo→שירונט','https://search.yahoo.com/search?p='+E(q+' site:shironet.mako.co.il')],
+  ['Mojeek→שירונט','https://www.mojeek.com/search?q='+E(q+' site:shironet.mako.co.il')]
+ ].forEach(([n,u])=>src.push({n,u,p:h=>shironetFrom(h,u),first:shF}));
  if(heb){
-  src.push({n:'שירונט',u:'https://shironet.mako.co.il/search?q='+E(song),p:h=>parseShironet(h),first:true});
   const siteQ=q+' ('+HE_SITES.slice(0,7).map(x=>'site:'+x).join(' OR ')+')';
   src.push({n:'Bing אתרי מילים',u:'https://www.bing.com/search?q='+E(siteQ)+'&setlang=he&cc=IL',p:h=>{const r=parseBing(h);return (r.length?r:parseGeneric(h,'https://www.bing.com/')).map(x=>Object.assign(x,{known:true}))}});
   src.push({n:'Yahoo אתרי מילים',u:'https://search.yahoo.com/search?p='+E(siteQ),p:h=>parseGeneric(h,'https://search.yahoo.com/').filter(x=>HE_SITES.some(d=>x.url.includes(d.split('/')[0])))});
@@ -1590,7 +1606,9 @@ async function webSearch(song,artist){
  let res=dres.slice();got.filter(g=>g.x.first).forEach(g=>res=res.concat(g.list.map(r=>Object.assign(r,{first:true}))));
  got.filter(g=>!g.x.first).forEach(g=>res=res.concat(g.list));
  const seen=new Set();
- res=res.filter(r=>(r.direct||/^https?:/.test(r.url))&&!SKIP.test(r.url)&&!seen.has(r.url)&&seen.add(r.url));
+ const keyOf=r=>{const w=(r.url||'').match(/shironet[^?]*\?.*wrkid=(\d+)/);return w?'shironet:'+w[1]:r.url};
+ res=res.filter(r=>(r.direct||/^https?:/.test(r.url))&&!SKIP.test(r.url)&&!seen.has(keyOf(r))&&seen.add(keyOf(r)));
+ res.forEach(r=>{if(/shironet\.mako/.test(r.url)){r.known=true;if(heb)r.first=true;const t=parseTitle(r.title);if(t.artist){r.title=t.title;r.artist=r.artist||t.artist}r.snippet=(r.artist?r.artist+' · ':'')+'שירונט'}});
  const sw=wordsOf(song),aw=wordsOf(artist);
  res.forEach(r=>{
   r.known=r.known||!!r.first||KNOWN.test(r.url);
@@ -1611,7 +1629,7 @@ async function webSearch(song,artist){
  return res.slice(0,20);
 }
 const SITE_SEL=[
- [/shironet/,'.artist_lyrics_text'],
+ [/shironet/,'.artist_lyrics_text, span[itemprop="lyrics"], .lyrics_text, #lyrics'],
  [/genius\.com/,'[data-lyrics-container="true"]'],
  [/azlyrics/,'.ringtone ~ div:not([class])'],
  [/lyrics\.com/,'#lyric-body-text'],
@@ -1686,6 +1704,7 @@ function addBreaks(text){
 function parseTitle(t){
  t=(t||'').replace(/\s+/g,' ').trim();let m;
  if((m=t.match(/מילים לשיר\s+(.+?)\s+-\s+(.+?)\s+-/)))return {title:m[1],artist:m[2]};
+ if((m=t.match(/^(.+?)\s+[-–]\s+(.+?)\s+[-–|]\s*(?:שירונט|shironet)/i)))return {title:m[1].replace(/^מילים לשיר\s*/,''),artist:m[2]};
  if((m=t.match(/(?:אקורדים|מילים)\s+ל?שיר\s+(.+?)\s+(?:של|-)\s+(.+?)(?:\s*[|–-].*)?$/)))return {title:m[1],artist:m[2].replace(/\s*(tab4u|נגנו|זמרשת).*$/i,'').trim()};
  if((m=t.match(/^(.+?)\s+[-–]\s+(.+?)\s+[-–|]\s*(tab4u|נגנו|זמרשת|nagnu)/i)))return {title:m[1],artist:m[2]};
  if((m=t.match(/^(.+?)\s+[-–]\s+(.+?)\s+(lyrics|מילים)/i)))return {title:m[2],artist:m[1]};
