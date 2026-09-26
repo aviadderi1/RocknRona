@@ -358,7 +358,7 @@ class MainActivity : ComponentActivity() {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
 
     /** Fetch a web page natively (no CORS) and hand the HTML back to the page. */
-    private fun fetchPage(id: String, url: String) {
+    private fun fetchPage(id: String, url: String, binary: Boolean = false) {
         try {
             var u = URL(url)
             var conn: HttpURLConnection
@@ -386,7 +386,9 @@ class MainActivity : ComponentActivity() {
             if (code >= 400) throw IllegalStateException("HTTP $code")
             var bytes = conn.inputStream.use { it.readBytes() }
             if (bytes.size > 4 * 1024 * 1024) bytes = bytes.copyOf(4 * 1024 * 1024)
-            val text = String(bytes, charsetOf(conn.contentType, bytes))
+            val ctype = conn.contentType ?: "application/octet-stream"
+            val text = if (binary) "data:" + ctype.substringBefore(';').trim() + ";base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
+                else String(bytes, charsetOf(conn.contentType, bytes))
             conn.disconnect()
             val finalUrl = u.toString()
             runOnUiThread {
@@ -419,6 +421,11 @@ class MainActivity : ComponentActivity() {
                 if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
+        }
+
+        @JavascriptInterface
+        fun httpGetData(id: String, url: String) {
+            thread { fetchPage(id, url, true) }
         }
 
         @JavascriptInterface

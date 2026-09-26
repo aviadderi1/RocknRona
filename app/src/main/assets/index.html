@@ -335,6 +335,14 @@ select.chip{cursor:pointer}
 .wFoot{padding:12px 20px;border-top:1px solid var(--ln);display:flex;gap:10px;align-items:center;background:var(--p2);flex-wrap:wrap}
 .wFoot select{width:auto;min-width:160px}
 .wMsg{max-width:520px;text-align:center;color:var(--mu);font-size:16px;line-height:1.6;padding:50px 20px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.lAv,.wAv,.edAvI{width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#26292F;display:inline-flex;align-items:center;justify-content:center;color:var(--mu);font-family:var(--ti);font-weight:600;font-size:18px}
+.lAv.ph,.edAvI.ph,.wAv.ph{border:1px solid var(--ln2)}
+.wImg{position:relative;display:inline-flex}
+.wAv{width:64px;height:64px;font-size:24px}
+.wAv .spin{width:20px;height:20px}
+.wAvX{position:absolute;top:-4px;left:-4px;width:24px;height:24px;border-radius:50%;border:0;background:#2E3138;color:var(--tx);display:flex;align-items:center;justify-content:center;padding:0}
+.edAv{border:0;background:none;padding:0;border-radius:50%;flex-shrink:0;display:flex}
+.edAvI{width:46px;height:46px}
 .wDiag{display:block;font-size:11.5px;color:var(--mu2);direction:rtl;line-height:1.5}
 .wMsg h2{margin:0;color:var(--tx);font-family:var(--ti);font-weight:600;font-size:24px}
 .pBrk{display:none}
@@ -390,6 +398,7 @@ select.chip{cursor:pointer}
 <section id="edit" class="screen">
   <header class="hdr">
     <button class="ib" id="edBack" aria-label="חזרה לספרייה"><i data-ic="back"></i></button>
+    <button class="edAv" id="edAv" aria-label="תמונת האמן"></button>
     <div class="edTitles">
       <input id="edTitle" class="titleIn" aria-label="שם השיר">
       <div class="edSub"><input id="edArtist" placeholder="שם האמן" aria-label="שם האמן"><span>·</span><select id="edFolder" aria-label="תיקייה"></select></div>
@@ -747,7 +756,7 @@ function listRow(s,i,n,reorder){
  const side=reorder?
   '<button class="ib sm" data-up="'+s.id+'" '+(i===0?'disabled':'')+' aria-label="הזז למעלה">'+ic('up',18)+'</button><button class="ib sm" data-down="'+s.id+'" '+(i===n-1?'disabled':'')+' aria-label="הזז למטה">'+ic('down',18)+'</button>':
   '<button class="playBtn sm" data-play="'+s.id+'" aria-label="הצג במצב הופעה">'+ic('play',16)+'</button><button class="ib sm ghost" data-sm="'+s.id+'" aria-label="אפשרויות שיר">'+ic('dots',18)+'</button>';
- return '<div class="lrow"><button class="lOpen" data-open="'+s.id+'">'+(S.ui.sort==='set'?'<span class="lNum">'+(i+1)+'</span>':'')+'<span class="lTitle">'+(s.fav?'<span class="favS">'+ic('starF',14)+'</span>':'')+esc(s.title||'ללא שם')+'</span><span class="lArt">'+esc(s.artist||'')+'</span>'+(pills?'<span class="pills">'+pills+'</span>':'')+'</button><div class="lside">'+side+'</div></div>';
+ return '<div class="lrow"><button class="lOpen" data-open="'+s.id+'">'+(S.ui.sort==='set'?'<span class="lNum">'+(i+1)+'</span>':'')+avatarHtml(s.img,s.artist||s.title,'lAv')+'<span class="lTitle">'+(s.fav?'<span class="favS">'+ic('starF',14)+'</span>':'')+esc(s.title||'ללא שם')+'</span><span class="lArt">'+esc(s.artist||'')+'</span>'+(pills?'<span class="pills">'+pills+'</span>':'')+'</button><div class="lside">'+side+'</div></div>';
 }
 function moveSong(id,dir){
  const list=visibleSongs();const i=list.findIndex(s=>s.id===id);const j=i+dir;
@@ -822,6 +831,7 @@ function openEditor(id){ED.id=id;show('edit');renderEditor();$('#blocks').scroll
 function closeEditor(){save(true);show('lib');renderLib()}
 function renderEditor(){
  const s=curSong();if(!s)return closeEditor();
+ $('#edAv').innerHTML=avatarHtml(s.img,s.artist||s.title,'edAvI');
  $('#edTitle').value=s.title;$('#edArtist').value=s.artist||'';
  $('#edFolder').innerHTML='<option value="">ללא תיקייה</option>'+S.folders.map(f=>'<option value="'+f.id+'">'+esc(f.name)+'</option>').join('');
  $('#edFolder').value=s.folderId&&S.folders.some(f=>f.id===s.folderId)?s.folderId:'';
@@ -906,6 +916,7 @@ $('#edTitle').addEventListener('input',e=>{const s=curSong();s.title=e.target.va
 $('#edArtist').addEventListener('input',e=>{const s=curSong();s.artist=e.target.value;touch(s)});
 $('#edFolder').addEventListener('change',e=>{const s=curSong();s.folderId=e.target.value||null;touch(s)});
 $('#edBack').onclick=closeEditor;
+$('#edAv').onclick=()=>{const s=curSong();menu('תמונת האמן',[{icon:'search',label:'חפש תמונה לפי שם האמן',fn:()=>refreshSongImage(s)}].concat(s.img?[{icon:'trash',label:'הסר תמונה',danger:true,fn:()=>{delete s.img;touch(s);renderEditor();renderLib()}}]:[]))};
 $('#edSave').onclick=()=>{save(true);toast('השיר נשמר')};
 $('#edPlay').onclick=()=>{const s=curSong();save(true);if(s.kind!=='pdf'&&!resolve(s).some(p=>p.text.trim()))return toast('הוסף מילים לפני מצב הופעה');startShow([s.id],0)};
 $('#edPaste').onclick=pasteModal;
@@ -1426,12 +1437,12 @@ $('#imp').addEventListener('input',e=>{const t=e.target;if(t.dataset.ti)IMP.song
 /* ========= online lyrics search ========= */
 const HTTP={n:0,cb:{}};
 const CAN_HTTP=!!(window.Android&&window.Android.httpGet);
-function httpGet(url){
+function httpGet(url,bin){
  return new Promise((res,rej)=>{
   if(url.startsWith('demo:'))return setTimeout(()=>res({text:demoPage(),url}),400);
   if(!CAN_HTTP)return rej(new Error('nonative'));
   const id='h'+(++HTTP.n);HTTP.cb[id]={res,rej};
-  try{window.Android.httpGet(id,url)}catch(e){delete HTTP.cb[id];return rej(e)}
+  try{if(bin){if(!window.Android.httpGetData)throw new Error('nobin');window.Android.httpGetData(id,url)}else window.Android.httpGet(id,url)}catch(e){delete HTTP.cb[id];return rej(e)}
   setTimeout(()=>{if(HTTP.cb[id]){delete HTTP.cb[id];rej(new Error('timeout'))}},25000);
  });
 }
@@ -1474,9 +1485,12 @@ function unwrapUrl(href,base){
  if(/google\./.test(u.hostname)&&q.get('q')&&/^https?:/.test(q.get('q')))return q.get('q');
  return u.href;
 }
+function normTxt(s){return String(s||'').toLowerCase().replace(/[\u0591-\u05C7]/g,'').replace(/[^\p{L}\p{N} ]+/gu,' ').replace(/\s+/g,' ').trim()}
+function decodeURIComponentSafe(u){try{return decodeURIComponent(u)}catch(e){return u}}
 function parseGeneric(html,base){
  const d=new DOMParser().parseFromString(html,'text/html'),out=[],seen=new Set();
  $$('a[href]',d).forEach(a=>{
+  if(a.closest('nav,header,footer,form,[role=navigation]'))return;
   const url=unwrapUrl(a.getAttribute('href'),base);if(!/^https?:/.test(url))return;
   const h=hostOf(url);if(!h||ENGINE_HOSTS.test(h)||SKIP.test(url))return;
   const t=a.textContent.replace(/\s+/g,' ').trim();if(t.length<6||/^https?:/.test(t))return;
@@ -1511,9 +1525,18 @@ async function webSearch(q){
  got.filter(g=>!g.x.first).forEach(g=>res=res.concat(g.list));
  const seen=new Set();
  res=res.filter(r=>/^https?:/.test(r.url)&&!SKIP.test(r.url)&&!seen.has(r.url)&&seen.add(r.url));
- res.forEach(r=>r.known=!!r.first||KNOWN.test(r.url));
- res.sort((a,b)=>((b.first?2:0)+(b.known?1:0))-((a.first?2:0)+(a.known?1:0)));
- return res.slice(0,25);
+ const words=normTxt(q).split(' ').filter(w=>w.length>1);
+ res.forEach(r=>{
+  r.known=!!r.first||KNOWN.test(r.url);
+  const t=normTxt(r.title+' '+r.snippet+' '+decodeURIComponentSafe(r.url));
+  r.frac=words.length?words.filter(w=>t.includes(w)).length/words.length:0;
+  r.lyr=/מילים|lyrics|lyric|שיר|song|שירונט/i.test(r.title+' '+r.snippet+' '+r.url);
+ });
+ const before=res.length;
+ res=res.filter(r=>r.first||(r.known&&r.frac>=.34)||(r.lyr&&r.frac>=.6));
+ WEB.filtered=before-res.length;
+ res.sort((a,b)=>((b.first?4:0)+(b.known?2:0)+b.frac)-((a.first?4:0)+(a.known?2:0)+a.frac));
+ return res.slice(0,20);
 }
 const SITE_SEL=[
  [/shironet/,'.artist_lyrics_text'],
@@ -1588,8 +1611,9 @@ function extractLyrics(html,url){
  const rule=SITE_SEL.find(r=>r[0].test(url));
  if(rule){const els=$$(rule[1],d);if(els.length)txt=cleanLyr(els.map(nodeText).join('\n\n'))}
  if(txt.split('\n').filter(Boolean).length<4){const b=bestBlock(d);txt=b?cleanLyr(nodeText(b)):''}
- const og=d.querySelector('meta[property="og:title"]');
- return {text:addBreaks(txt),meta:parseTitle((og&&og.getAttribute('content'))||d.title)};
+ const og=d.querySelector('meta[property="og:title"]'),oi=d.querySelector('meta[property="og:image"]');
+ let ogImg='';try{ogImg=oi?new URL(oi.getAttribute('content'),url).href:''}catch(e){}
+ return {text:addBreaks(txt),meta:parseTitle((og&&og.getAttribute('content'))||d.title),ogImg};
 }
 
 const WEB={q:'',res:[],sel:-1,busy:false,loading:false,cur:null,view:'split',folder:'',saved:null,tok:null};
@@ -1617,7 +1641,8 @@ async function pickWeb(i){
   const page=await httpGet(r.url);if(tok!==WEB.tok)return;
   const ex=extractLyrics(page.text,page.url||r.url);
   const meta=ex.meta.title?ex.meta:parseTitle(r.title);
-  WEB.cur={url:r.url,text:ex.text,title:meta.title||parseTitle(r.title).title,artist:meta.artist||'',parts:autoSplit(ex.text)};
+  WEB.cur={url:r.url,text:ex.text,title:meta.title||parseTitle(r.title).title,artist:meta.artist||'',parts:autoSplit(ex.text),ogImg:ex.ogImg||'',img:'',imgBusy:false};
+  webArtistImage(tok);
  }catch(e){if(tok!==WEB.tok)return;WEB.cur={error:true,url:r.url}}
  WEB.loading=false;renderWebPrev();
 }
@@ -1633,17 +1658,65 @@ function renderWebPrev(){
  const body=WEB.view==='edit'?
   '<textarea class="bigText" id="wText" style="max-width:660px;min-height:50vh" spellcheck="false">'+esc(c.text)+'</textarea><div class="hint" style="max-width:660px">שורה ריקה מפרידה בין חלקים. אחרי התיקון לחץ "חלק מחדש".</div>':
   '<div class="txtView">'+c.parts.map(p=>{const src=p.ref?c.parts.find(q=>q.id===p.ref):p;if(!src)return '';return '<div class="tvPart"><span class="chip t-'+src.type+'">'+esc(L[p.id])+'</span>'+(p.ref?'<span class="tvRep">חוזר</span>':'<div class="tvTxt c-'+src.type+'">'+esc(src.text)+'</div>')+'</div>'}).join('')+'</div>';
- E.innerHTML='<div class="wScroll"><div class="wMeta"><input class="field" id="wTitle" value="'+esc(c.title)+'" aria-label="שם השיר" placeholder="שם השיר"><input class="field" id="wArtist" value="'+esc(c.artist)+'" aria-label="שם הזמר" placeholder="שם הזמר"></div>'+
+ E.innerHTML='<div class="wScroll"><div class="wMeta"><span class="wImg" id="wImg"></span><input class="field" id="wTitle" value="'+esc(c.title)+'" aria-label="שם השיר" placeholder="שם השיר"><input class="field" id="wArtist" value="'+esc(c.artist)+'" aria-label="שם הזמר" placeholder="שם הזמר"></div>'+
   '<div class="wMeta"><div class="seg"><button data-wv="split" class="'+(WEB.view==='split'?'on':'')+'">החלוקה שזוהתה</button><button data-wv="edit" class="'+(WEB.view==='edit'?'on':'')+'">עריכת טקסט</button></div><span class="hint">'+esc(summarize(c.parts))+'</span><span class="flex1"></span>'+openBtn+'</div>'+body+'</div>'+
   '<div class="wFoot">'+(WEB.view==='edit'?'<button class="btn" id="wResplit">'+ic('repeat',16)+'חלק מחדש</button>':'')+
   '<select class="field" id="wFolder" aria-label="תיקייה"><option value="">ללא תיקייה</option>'+S.folders.map(f=>'<option value="'+f.id+'"'+(WEB.folder===f.id?' selected':'')+'>'+esc(f.name)+'</option>').join('')+'</select><span class="flex1"></span>'+
   (WEB.saved?'<button class="btn" id="wEdit">'+ic('edit',16)+'פתח בעורך</button><button class="btn" disabled>'+ic('check',16)+'נשמר</button>':'<button class="btn pri" id="wSave">'+ic('check',18)+'שמור לספרייה</button>')+'</div>';
+ renderWebImg();
+}
+/* ---- artist photo ---- */
+const IMGC={};
+function sameName(a,b){a=normTxt(a);b=normTxt(b);return !!a&&!!b&&(a===b||a.includes(b)||b.includes(a))}
+async function findArtistImage(artist,fallback){
+ if(!artist&&!fallback)return '';
+ const k=normTxt(artist)||fallback;if(IMGC[k]!==undefined)return IMGC[k];
+ let url='';const E=encodeURIComponent;
+ if(artist){
+  try{const j=JSON.parse((await httpGet('https://api.deezer.com/search/artist?q='+E(artist))).text);const a=(j.data||[]).find(x=>sameName(x.name,artist));
+   if(a&&a.picture_big&&!/\/artist\/\//.test(a.picture_big))url=a.picture_big}catch(e){}
+  for(const lang of (HEB.test(artist)?['he','en']:['en','he'])){
+   if(url)break;
+   try{const j=JSON.parse((await httpGet('https://'+lang+'.wikipedia.org/w/api.php?action=query&format=json&prop=pageimages&piprop=thumbnail&pithumbsize=400&redirects=1&titles='+E(artist))).text);
+    const pg=Object.values((j.query&&j.query.pages)||{})[0];if(pg&&pg.thumbnail&&pg.thumbnail.source)url=pg.thumbnail.source}catch(e){}
+  }
+ }
+ if(!url&&fallback)url=fallback;
+ let data='';
+ if(url){try{data=await shrinkImage((await httpGet(url,true)).text)}catch(e){}}
+ IMGC[k]=data;return data;
+}
+function shrinkImage(src){
+ return new Promise(res=>{
+  if(!src||!/^data:image\//.test(src))return res('');
+  const im=new Image();im.onload=()=>{const S0=200,c=document.createElement('canvas');c.width=c.height=S0;const x=c.getContext('2d');
+   const r=Math.max(S0/im.width,S0/im.height),w=im.width*r,h=im.height*r;x.drawImage(im,(S0-w)/2,(S0-h)/2,w,h);
+   try{res(c.toDataURL('image/jpeg',.82))}catch(e){res('')}};
+  im.onerror=()=>res('');im.src=src;
+ });
+}
+async function webArtistImage(tok){
+ const c=WEB.cur;if(!c||c.error)return;
+ c.imgBusy=true;renderWebImg();
+ const data=await findArtistImage(c.artist,c.artist?'':c.ogImg);
+ if(tok!==WEB.tok||WEB.cur!==c)return;
+ c.img=data;c.imgBusy=false;renderWebImg();
+}
+function avatarHtml(img,name,cls){return img?'<img class="'+cls+'" src="'+img+'" alt="">':'<span class="'+cls+' ph">'+esc((name||'♪').trim().charAt(0)||'♪')+'</span>'}
+function renderWebImg(){const b=$('#wImg');if(!b||!WEB.cur)return;const c=WEB.cur;b.innerHTML=c.imgBusy?'<span class="wAv ph"><span class="spin"></span></span>':avatarHtml(c.img,c.artist||c.title,'wAv')+(c.img?'<button class="wAvX" id="wImgX" aria-label="הסר תמונה">'+ic('close',12)+'</button>':'')}
+async function refreshSongImage(s){
+ if(!s.artist)return toast('הוסף שם אמן כדי לחפש תמונה');
+ if(!CAN_HTTP)return toast('חיפוש תמונה זמין באפליקציה בטאבלט');
+ toast('מחפש תמונה של '+s.artist+'…');delete IMGC[normTxt(s.artist)];
+ const d=await findArtistImage(s.artist,'');
+ if(d){s.img=d;touch(s);renderEditor();toast('התמונה עודכנה')}else toast('לא נמצאה תמונה של '+s.artist);
 }
 function saveWeb(){
  const c=WEB.cur;if(!c)return;
  if(WEB.view==='edit'&&$('#wText')){c.text=$('#wText').value;c.parts=autoSplit(c.text)}
  if(!c.parts.length)return toast('אין מילים לשמירה');
  const s=newSongObj({title:c.title||'שיר חדש',artist:c.artist||'',folderId:WEB.folder||null});
+ if(c.img)s.img=c.img;
  s.parts=c.parts.map(p=>Object.assign({},p));S.songs.push(s);save(true);
  WEB.saved=s.id;renderWebPrev();toast('השיר נשמר בספרייה');
 }
@@ -1655,11 +1728,13 @@ $('#web').addEventListener('click',e=>{
  if(d.wi)return pickWeb(+d.wi);
  if(d.wv){if(WEB.view==='edit'&&$('#wText')){WEB.cur.text=$('#wText').value;WEB.cur.parts=autoSplit(WEB.cur.text)}WEB.view=d.wv;return renderWebPrev()}
  if(t.id==='wResplit'){WEB.cur.text=$('#wText').value;WEB.cur.parts=autoSplit(WEB.cur.text);WEB.view='split';renderWebPrev();return toast('חולק מחדש')}
+ if(t.id==='wImgX'){WEB.cur.img='';return renderWebImg()}
  if(t.id==='wSave')return saveWeb();
  if(t.id==='wEdit'){const id=WEB.saved;WEB.tok=null;return openEditor(id)}
  if(t.id==='wOpen'){const u=WEB.cur.url;if(window.Android&&window.Android.openUrl)window.Android.openUrl(u);else window.open(u,'_blank','noopener');}
 });
-$('#web').addEventListener('input',e=>{const t=e.target,c=WEB.cur;if(!c)return;if(t.id==='wTitle')c.title=t.value;else if(t.id==='wArtist')c.artist=t.value;else if(t.id==='wText')c.text=t.value});
+let wArtT=0;
+$('#web').addEventListener('input',e=>{const t=e.target,c=WEB.cur;if(!c)return;if(t.id==='wTitle')c.title=t.value;else if(t.id==='wArtist'){c.artist=t.value;clearTimeout(wArtT);wArtT=setTimeout(()=>webArtistImage(WEB.tok),900)}else if(t.id==='wText')c.text=t.value});
 $('#web').addEventListener('change',e=>{if(e.target.id==='wFolder')WEB.folder=e.target.value});
 $('#wq').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doWebSearch()}});
 
