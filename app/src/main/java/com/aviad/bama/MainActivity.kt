@@ -2,6 +2,11 @@ package com.aviad.bama
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.Presentation
+import android.content.Context
+import android.graphics.Color
+import android.hardware.display.DisplayManager
+import android.view.Display
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
@@ -37,6 +42,16 @@ class MainActivity : ComponentActivity() {
     private var pageReady = false
     private var pendingUri: Uri? = null
     private var fileCallback: ValueCallback<Array<Uri>>? = null
+
+    private val cast by lazy { CastServer(applicationContext) }
+    private var casting = false
+    private var stage: StagePresentation? = null
+    private val displayManager by lazy { getSystemService(Context.DISPLAY_SERVICE) as DisplayManager }
+    private val displayListener = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(id: Int) { refreshStage() }
+        override fun onDisplayRemoved(id: Int) { refreshStage() }
+        override fun onDisplayChanged(id: Int) { }
+    }
 
     private val pickLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
@@ -136,6 +151,92 @@ class MainActivity : ComponentActivity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) hideSystemBars()
+    }
+
+    override fun onDestroy() {
+        stopCast()
+        cast.shutdown()
+        super.onDestroy()
+    }
+
+    /** Full-screen stage view on a wireless (Miracast) or HDMI display. */
+    private inner class StagePresentation(ctx: Context, display: Display) : Presentation(ctx, display) {
+        private var view: WebView? = null
+
+        @SuppressLint("SetJavaScriptEnabled")
+        override fun onCreate(savedInstanceState: Bundle?) {
+            super.onCreate(savedInstanceState)
+            val wv = WebView(context)
+            wv.setBackgroundColor(Color.BLACK)
+            wv.settings.javaScriptEnabled = true
+            wv.settings.domStorageEnabled = true
+            wv.settings.textZoom = 100
+            wv.webViewClient = WebViewClient()
+            setContentView(wv)
+            wv.loadUrl("http://127.0.0.1:${cast.port}/")
+            view = wv
+        }
+
+        override fun onStop() {
+            view?.destroy()
+            view = null
+            super.onStop()
+        }
+    }
+
+    private fun stageDisplay(): Display? =
+        displayManager.getDisplays(DisplayManager.DISPLAY_CATEGORY_PRESENTATION).firstOrNull()
+
+    private fun refreshStage() {
+        runOnUiThread {
+            if (!casting) return@runOnUiThread
+            val d = stageDisplay()
+            if (d == null) {
+                if (stage != null) {
+                    try { stage?.dismiss() } catch (_: Exception) { }
+                    stage = null
+                    js("window.__castDisplay && window.__castDisplay(null)")
+                }
+                return@runOnUiThread
+            }
+            if (stage?.display?.displayId == d.displayId) return@runOnUiThread
+            try { stage?.dismiss() } catch (_: Exception) { }
+            val p = StagePresentation(this, d)
+            try {
+                p.show()
+                stage = p
+                js("window.__castDisplay && window.__castDisplay(" + JSONObject.quote(d.name ?: "מסך חיצוני") + ")")
+            } catch (e: Exception) {
+                stage = null
+            }
+        }
+    }
+
+    private fun castInfoJson(): String {
+        val o = JSONObject()
+        o.put("port", cast.port)
+        o.put("ips", org.json.JSONArray(CastServer.localIps()))
+        o.put("display", stage?.display?.name ?: JSONObject.NULL)
+        return o.toString()
+    }
+
+    private fun startCast(): String {
+        if (!casting) {
+            if (cast.start() == 0) return "{}"
+            casting = true
+            try { displayManager.registerDisplayListener(displayListener, null) } catch (_: Exception) { }
+        }
+        refreshStage()
+        return castInfoJson()
+    }
+
+    private fun stopCast() {
+        if (!casting) return
+        casting = false
+        try { displayManager.unregisterDisplayListener(displayListener) } catch (_: Exception) { }
+        try { stage?.dismiss() } catch (_: Exception) { }
+        stage = null
+        cast.stop()
     }
 
     override fun onPause() {
@@ -312,6 +413,28 @@ class MainActivity : ComponentActivity() {
             runOnUiThread {
                 try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (_: Exception) {}
             }
+        }
+
+        @JavascriptInterface
+        fun castStart(): String {
+            val r = arrayOf("{}")
+            val latch = java.util.concurrent.CountDownLatch(1)
+            runOnUiThread { try { r[0] = startCast() } finally { latch.countDown() } }
+            latch.await(3, java.util.concurrent.TimeUnit.SECONDS)
+            return r[0]
+        }
+
+        @JavascriptInterface
+        fun castInfo(): String = castInfoJson()
+
+        @JavascriptInterface
+        fun castStop() {
+            runOnUiThread { stopCast() }
+        }
+
+        @JavascriptInterface
+        fun castState(json: String) {
+            if (casting) cast.push(json)
         }
 
         @JavascriptInterface

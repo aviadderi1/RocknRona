@@ -78,7 +78,7 @@ input[type=range]{accent-color:var(--am);width:100%;height:32px}
 .mhead h1{margin:0;font-family:var(--ti);font-size:32px;font-weight:600;letter-spacing:-.3px;line-height:1.2}
 .mhead .sub{color:var(--mu);font-size:15px;margin-top:4px}
 .grid{flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;align-content:start;padding:2px 2px 8px}
-.card{background:var(--p1);border:1px solid #2A2D33;border-radius:16px;display:flex;align-items:stretch;min-height:150px}
+.card{background:var(--p1);border:1px solid #2A2D33;border-radius:16px;display:flex;align-items:stretch;min-height:112px}
 .cardOpen{flex:1;min-width:0;padding:16px 18px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;background:transparent;border:0;color:var(--tx);text-align:right;border-radius:16px}
 .cardOpen .ttl{font-family:var(--ti);font-size:20px;font-weight:600;letter-spacing:-.2px;line-height:1.25;display:flex;align-items:center;gap:6px}
 .favS{color:var(--am);display:inline-flex}
@@ -215,7 +215,28 @@ select.chip{cursor:pointer}
 .pPart{min-width:118px;text-align:center;display:flex;flex-direction:column;gap:2px}
 .pPart b{font-size:18px;font-weight:800;color:var(--tx);white-space:nowrap}
 .pPart small{font-size:12px;color:var(--mu2)}
-#play.manual .marker{border-right-color:#5A4A2E}
+#play.manual .marker{display:none}
+.pInner.paged{padding:18px 56px 0}
+.pInner.paged.pdf{padding:14px 24px 0}
+.pInner.paged .part,.pInner.paged .pdfPage,.pInner.paged .endHint{display:none}
+.pInner.paged .part.on,.pInner.paged .pdfPage.on{display:block}
+.pInner.paged .ln{opacity:1}
+.pInner.paged .part>.sec:first-child{margin-top:0}
+.pInner.paged .part>.gap:last-child{display:none}
+.enter{animation:pgIn .26s ease-out}
+@keyframes pgIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.pb.cast.on{background:#16324A;color:#8FD0FF}
+.castDot{width:10px;height:10px;border-radius:50%;background:#4ADE80;box-shadow:0 0 0 4px rgba(74,222,128,.18);flex-shrink:0}
+.castStat{display:flex;align-items:center;gap:10px;font-weight:700;color:#9BE3B5}
+.castBox{background:#141518;border:1px solid var(--ln2);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.castBox b{font-size:16px}
+.castBox p{margin:0;color:var(--mu);font-size:14px;line-height:1.6}
+.castUrl{direction:ltr;text-align:center;font-size:24px;font-weight:800;color:#F4C77A;letter-spacing:.3px;padding:6px 0;-webkit-user-select:text;user-select:text}
+.castQr{align-self:center;background:#fff;border-radius:10px;padding:8px;line-height:0}
+.castQr img{width:150px;height:150px;image-rendering:pixelated}
+.castWin{position:fixed;left:16px;bottom:118px;width:min(30vw,340px);aspect-ratio:16/9;z-index:45;border:1px solid #3A3D44;border-radius:12px;overflow:hidden;background:#000;box-shadow:0 14px 40px rgba(0,0,0,.6)}
+.castWin iframe{width:100%;height:100%;border:0;display:block}
+.castWin span{position:absolute;bottom:6px;left:8px;font-size:11px;font-weight:700;color:#8FD0FF;background:rgba(0,0,0,.6);padding:2px 8px;border-radius:8px;pointer-events:none}
 #play.barHidden .showBar{display:flex}
 
 /* import */
@@ -443,6 +464,7 @@ select.chip{cursor:pointer}
       <button class="pb" id="pLg" aria-label="הגדל טקסט" style="font-size:21px">א+</button>
       <button class="pb" id="pInv" aria-label="היפוך צבעים" hidden><i data-ic="invert" data-s="22"></i></button>
       <button class="pb" id="pMir" aria-label="מראה"><i data-ic="mirror" data-s="22"></i></button>
+      <button class="pb cast" id="pCast" aria-label="שידור למסך נוסף"><i data-ic="cast" data-s="22"></i></button>
       <div class="vsep"></div>
       <div class="pNext" id="pNextName"></div>
       <button class="pb wide" id="pHide" aria-label="הסתר סרגל כלים"><i data-ic="down" data-s="18"></i><span>הסתר</span></button>
@@ -484,6 +506,7 @@ select.chip{cursor:pointer}
 <div id="toast" class="toast" role="status"></div>
 <input type="file" id="fileIn" accept="application/pdf,.pdf" hidden>
 <script src="lib/pdf.min.js"></script>
+<script src="lib/qrcode.js"></script>
 <script>
 'use strict';
 /* ========= core ========= */
@@ -537,6 +560,7 @@ const ICON={
  ext:SV+'<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
  side:SV+'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg>',
  grid:SV+'<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>',
+ cast:SV+'<path d="M3 18a3 3 0 0 1 3 3"/><path d="M3 14a7 7 0 0 1 7 7"/><path d="M3 10a11 11 0 0 1 11 11"/><path d="M3 7V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/></svg>',
  move:SV+'<path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 13h6"/><path d="M13 10l3 3-3 3"/></svg>'
 };
 function ic(n,s){s=s||20;return (ICON[n]||'').replace('<svg','<svg width="'+s+'" height="'+s+'"')}
@@ -568,10 +592,10 @@ function load(){
  let d=null;
  try{d=JSON.parse(localStorage.getItem(KEY))}catch(e){}
  if(!d||!Array.isArray(d.songs)){
-  const f=uid();
-  d={v:1,folders:[{id:f,name:'השירים שלי'}],songs:[sampleSong(f)]};
+  d={v:1,folders:[],songs:[sampleSong(null)],mig1:true};
  }
  d.folders=d.folders||[];
+ if(!d.mig1){const df=d.folders.filter(f=>f.name.trim()==='השירים שלי').map(f=>f.id);d.folders=d.folders.filter(f=>!df.includes(f.id));d.songs.forEach(s=>{if(df.includes(s.folderId))s.folderId=null});d.mig1=true}
  d.ui=Object.assign({folder:'all',sort:'set',barHidden:false,mirror:false},d.ui||{});
  d.speed=d.speed||1;
  d.defStyle=d.defStyle||clone(DEF_STYLE);
@@ -697,12 +721,11 @@ function visibleSongs(){
  return a;
 }
 function renderLib(){
- if(!['all','fav','none'].includes(S.ui.folder)&&!S.folders.some(f=>f.id===S.ui.folder))S.ui.folder='all';
+ if(!['all','fav'].includes(S.ui.folder)&&!S.folders.some(f=>f.id===S.ui.folder))S.ui.folder='all';
  const cnt=id=>songsIn(id).length;
  const row=(id,icon,name,user)=>'<div class="foldRow'+(S.ui.folder===id?' on':'')+'"><button class="fold" data-f="'+id+'">'+ic(icon,18)+'<span class="nm">'+esc(name)+'</span><span class="ct">'+cnt(id)+'</span></button>'+(user?'<button class="fmore" data-fm="'+id+'" aria-label="אפשרויות תיקייה">'+ic('dots',18)+'</button>':'')+'</div>';
  let h='<div class="navTop"><button class="btn sm ghost" id="navHide">'+ic('side',18)+'הסתר</button></div>'+row('all','music','כל השירים')+row('fav','star','מועדפים');
  h+='<div class="lbl navLbl">תיקיות</div>'+S.folders.map(f=>row(f.id,'folder',f.name,true)).join('');
- if(S.folders.length&&cnt('none'))h+=row('none','folder','ללא תיקייה');
  h+='<button class="btn dash newFold" id="newFold">'+ic('plus',16)+'תיקייה חדשה</button><div class="flex1"></div>';
  h+='<div class="legend"><div class="lbl">מקרא צבעים</div><div><i class="t-verse"></i>בית</div><div><i class="t-chorus"></i>פזמון</div><div><i class="t-bridge"></i>גשר</div></div>';
  $('#nav').innerHTML=h;
@@ -726,23 +749,19 @@ function renderLib(){
  $('#setbar').innerHTML=list.length?'<div class="setbar">'+ic('list',22)+'<div class="flex1 sbTxt"><b>'+(list.length===1?'שיר אחד':list.length+' שירים')+' בסט</b><span>'+esc(list.slice(0,4).map(s=>s.title).join(' ← '))+(list.length>4?' ← …':'')+'</span></div><button class="btn pri" id="startSet">'+ic('play',16)+'התחל הופעה</button></div>':'';
 }
 function card(s,i,n,reorder){
- let pills;
- if(s.kind==='pdf')pills='<span class="badge">PDF</span><span class="pdfInfo">'+pagesTxt(s)+'</span>';
- else{const r=resolve(s);pills=r.length?r.slice(0,10).map(p=>'<span class="pill t-'+p.type+'">'+TYPES[p.type].short+'</span>').join('')+(r.length>10?'<span class="more">+'+(r.length-10)+'</span>':''):'<span class="pdfInfo">עדיין בלי מילים</span>'}
+ const pills=s.kind==='pdf'?'<span class="badge">PDF</span><span class="pdfInfo">'+pagesTxt(s)+'</span>':(resolve(s).some(p=>p.text.trim())?'':'<span class="pdfInfo">עדיין בלי מילים</span>');
  const meta=s.kind==='pdf'?'גלילה על הקובץ המקורי':'';
  const side=reorder?
   '<button class="ib sm" data-up="'+s.id+'" '+(i===0?'disabled':'')+' aria-label="הזז למעלה">'+ic('up',18)+'</button><button class="ib sm" data-down="'+s.id+'" '+(i===n-1?'disabled':'')+' aria-label="הזז למטה">'+ic('down',18)+'</button>':
   '<button class="playBtn" data-play="'+s.id+'" aria-label="הצג במצב הופעה">'+ic('play',18)+'</button><button class="ib sm ghost" data-sm="'+s.id+'" aria-label="אפשרויות שיר">'+ic('dots',18)+'</button>';
- return '<div class="card"><button class="cardOpen" data-open="'+s.id+'"><span class="ttl">'+(s.fav?'<span class="favS">'+ic('starF',15)+'</span>':'')+esc(s.title||'ללא שם')+'</span><span class="art">'+esc(s.artist||'')+'</span><span class="pills">'+pills+'</span>'+(meta?'<span class="meta">'+meta+'</span>':'')+'</button><div class="side">'+side+'</div></div>';
+ return '<div class="card"><button class="cardOpen" data-open="'+s.id+'"><span class="ttl">'+(s.fav?'<span class="favS">'+ic('starF',15)+'</span>':'')+esc(s.title||'ללא שם')+'</span><span class="art">'+esc(s.artist||'')+'</span>'+(pills?'<span class="pills">'+pills+'</span>':'')+(meta?'<span class="meta">'+meta+'</span>':'')+'</button><div class="side">'+side+'</div></div>';
 }
 function listRow(s,i,n,reorder){
- let pills;
- if(s.kind==='pdf')pills='<span class="badge">PDF</span>';
- else{const r=resolve(s);pills=r.slice(0,8).map(p=>'<span class="pill t-'+p.type+'">'+TYPES[p.type].short+'</span>').join('')+(r.length>8?'<span class="more">+'+(r.length-8)+'</span>':'')}
+ const pills=s.kind==='pdf'?'<span class="badge">PDF</span>':'';
  const side=reorder?
   '<button class="ib sm" data-up="'+s.id+'" '+(i===0?'disabled':'')+' aria-label="הזז למעלה">'+ic('up',18)+'</button><button class="ib sm" data-down="'+s.id+'" '+(i===n-1?'disabled':'')+' aria-label="הזז למטה">'+ic('down',18)+'</button>':
   '<button class="playBtn sm" data-play="'+s.id+'" aria-label="הצג במצב הופעה">'+ic('play',16)+'</button><button class="ib sm ghost" data-sm="'+s.id+'" aria-label="אפשרויות שיר">'+ic('dots',18)+'</button>';
- return '<div class="lrow"><button class="lOpen" data-open="'+s.id+'">'+(S.ui.sort==='set'?'<span class="lNum">'+(i+1)+'</span>':'')+'<span class="lTitle">'+(s.fav?'<span class="favS">'+ic('starF',14)+'</span>':'')+esc(s.title||'ללא שם')+'</span><span class="lArt">'+esc(s.artist||'')+'</span><span class="pills">'+pills+'</span></button><div class="lside">'+side+'</div></div>';
+ return '<div class="lrow"><button class="lOpen" data-open="'+s.id+'">'+(S.ui.sort==='set'?'<span class="lNum">'+(i+1)+'</span>':'')+'<span class="lTitle">'+(s.fav?'<span class="favS">'+ic('starF',14)+'</span>':'')+esc(s.title||'ללא שם')+'</span><span class="lArt">'+esc(s.artist||'')+'</span>'+(pills?'<span class="pills">'+pills+'</span>':'')+'</button><div class="lside">'+side+'</div></div>';
 }
 function moveSong(id,dir){
  const list=visibleSongs();const i=list.findIndex(s=>s.id===id);const j=i+dir;
@@ -1004,7 +1023,7 @@ async function pdfToText(s){
 }
 
 /* ========= prompter ========= */
-const P={parts:[],linePart:[],list:[],i:0,playing:false,last:0,raf:0,touch:false,pos:0,elapsed:0,from:'lib',tops:[],lines:[],cur:-1,tShown:-1,tok:null,upd:false};
+const P={pi:0,parts:[],linePart:[],list:[],i:0,playing:false,last:0,raf:0,touch:false,pos:0,elapsed:0,from:'lib',tops:[],lines:[],cur:-1,tShown:-1,tok:null,upd:false};
 const playSong=()=>S.songs.find(s=>s.id===P.list[P.i]);
 function startShow(ids,idx){
  const target=ids[idx];
@@ -1018,7 +1037,7 @@ function startShow(ids,idx){
 }
 function endHint(){const nx=S.songs.find(x=>x.id===P.list[P.i+1]);return '<div class="endHint">'+(nx?'סוף השיר · הבא: '+esc(nx.title):'סוף הסט')+'</div>'}
 async function loadPlay(){
- P.playing=false;P.elapsed=0;P.pos=0;P.cur=-1;P.tShown=-1;P.tok=uid();updPlayBtn();
+ P.playing=false;P.elapsed=0;P.pos=0;P.cur=-1;P.pi=0;P.tShown=-1;P.tok=uid();updPlayBtn();
  const s=playSong(),sc=$('#pScroll'),isPdf=s.kind==='pdf';
  $('#pTitle').textContent=s.title;$('#pCount').textContent=P.list.length>1?'שיר '+(P.i+1)+' מתוך '+P.list.length:'';
  const nx=S.songs.find(x=>x.id===P.list[P.i+1]);
@@ -1029,7 +1048,9 @@ async function loadPlay(){
  applyMode();
  sc.scrollTop=0;
  if(isPdf)await buildPdf(s);else buildText(s);
- measure();onPScroll();updSpeed();updTime();updPart();
+ applyMode();measure();
+ if(S.ui.manual)showPage(0);
+ onPScroll();updSpeed();updTime();updPart();castPush();
 }
 function buildText(s){
  const st=s.style,f=font(st.font),inner=$('#pInner');
@@ -1061,7 +1082,8 @@ async function buildPdf(s){
   for(let n=s.from||1;n<=(s.to||doc.numPages);n++){
    const c=await renderPage(doc,n,w);if(tok!==P.tok)return;
    if(first){inner.innerHTML='';first=false}
-   c.className='pdfPage';inner.appendChild(c);P.parts=$$('.pdfPage',inner);updPart();
+   c.className='pdfPage';c.dataset.w=c.style.width;inner.appendChild(c);P.parts=$$('.pdfPage',inner);
+   if(S.ui.manual&&P.parts.length===1){applyMode();showPage(0)}else updPart();
   }
   inner.insertAdjacentHTML('beforeend',endHint());
  }catch(e){if(tok===P.tok)inner.innerHTML='<div class="pLoad">לא ניתן לטעון את קובץ ה-PDF</div>'}
@@ -1070,14 +1092,13 @@ function measure(){P.tops=P.lines.map(l=>l.offsetTop+l.offsetHeight/2)}
 function onPScroll(){
  if(P.upd)return;P.upd=true;
  requestAnimationFrame(()=>{
-  P.upd=false;const sc=$('#pScroll'),max=sc.scrollHeight-sc.clientHeight;
-  $('#pProg').style.width=(max>0?Math.min(100,sc.scrollTop/max*100):0)+'%';
-  updPart();
-  if(!P.lines.length)return;
-  if(S.ui.manual){const cp=curPart();if(cp!==P.cur){P.cur=cp;P.lines.forEach((l,i)=>{const pi=P.linePart[i];l.classList.toggle('past',pi<cp);l.classList.toggle('cur',pi===cp)})}return}
+  P.upd=false;const sc=$('#pScroll');
+  updProg();updPart();
+  if(S.ui.manual||!P.lines.length)return castPush();
   const y=sc.scrollTop+sc.clientHeight*.38;let best=0,bd=1e12;
   for(let i=0;i<P.tops.length;i++){const d=Math.abs(P.tops[i]-y);if(d<bd){bd=d;best=i}}
   if(best!==P.cur){P.cur=best;P.lines.forEach((l,i)=>{l.classList.toggle('past',i<best);l.classList.toggle('cur',i===best)})}
+  castPush();
  });
 }
 function tick(ts){
@@ -1100,19 +1121,41 @@ function changeSize(d){
  const s=playSong();if(!s||s.kind==='pdf')return;const sc=$('#pScroll');
  const r=sc.scrollHeight?sc.scrollTop/sc.scrollHeight:0;
  s.style.size=clamp(s.style.size+d,28,160);touch(s);
- $('#pInner').style.fontSize=s.style.size+'px';measure();
+ $('#pInner').style.fontSize=s.style.size+'px';
+ if(S.ui.manual){fitPage(P.parts[P.pi]);castPush();return toast('גודל טקסט: '+s.style.size)}
+ measure();
  sc.scrollTop=r*sc.scrollHeight;P.pos=sc.scrollTop;P.cur=-1;onPScroll();toast('גודל טקסט: '+s.style.size);
 }
-function readY(){const sc=$('#pScroll');return playSong()&&playSong().kind==='pdf'?sc.scrollTop+40:sc.scrollTop+sc.clientHeight*.38+8}
-function partTop(el){const sc=$('#pScroll');return playSong().kind==='pdf'?el.offsetTop-20:el.offsetTop-sc.clientHeight*.38}
-function curPart(){const y=readY();let c=0;for(let i=0;i<P.parts.length;i++){if(P.parts[i].offsetTop<=y)c=i;else break}return c}
+function autoPart(){const sc=$('#pScroll');const pdf=playSong()&&playSong().kind==='pdf';const y=pdf?sc.scrollTop+40:sc.scrollTop+sc.clientHeight*.38+8;let c=0;for(let i=0;i<P.parts.length;i++){if(P.parts[i].offsetTop<=y)c=i;else break}return c}
+function autoTop(el){const sc=$('#pScroll');return playSong().kind==='pdf'?el.offsetTop-20:el.offsetTop-sc.clientHeight*.38}
+function curPart(){return S.ui.manual?Math.min(P.pi,Math.max(0,P.parts.length-1)):autoPart()}
+function pageRoom(){const sc=$('#pScroll'),bar=$('.pBar');return sc.clientHeight-18-(S.ui.barHidden?24:(bar.offsetHeight+40))}
+function fitPage(el){
+ if(!el)return;const s=playSong();if(!s)return;const room=Math.max(120,pageRoom());
+ if(s.kind==='pdf'){el.style.width='auto';el.style.height='auto';el.style.maxWidth='100%';el.style.maxHeight=room+'px';return}
+ el.style.fontSize='';
+ for(let k=0;k<3;k++){const h=el.offsetHeight;if(!h||h<=room)break;const cur=parseFloat(el.style.fontSize)||100;el.style.fontSize=Math.max(45,cur*room/h*.98)+'%'}
+}
+function unfit(){P.parts.forEach(el=>{el.classList.remove('on','enter');el.style.fontSize='';if(el.dataset.w){el.style.width=el.dataset.w;el.style.maxHeight='';el.style.height='';el.style.maxWidth=''}})}
+function showPage(i){
+ if(!P.parts.length)return;
+ P.pi=clamp(i,0,P.parts.length-1);
+ P.parts.forEach((p,k)=>{p.classList.toggle('on',k===P.pi);p.classList.remove('enter')});
+ const el=P.parts[P.pi];fitPage(el);void el.offsetWidth;el.classList.add('enter');
+ $('#pScroll').scrollTop=0;updPart();updProg();castPush();
+}
+function updProg(){
+ const sc=$('#pScroll'),n=P.parts.length;let r;
+ if(S.ui.manual)r=n?(P.pi+1)/n:0;else{const max=sc.scrollHeight-sc.clientHeight;r=max>0?Math.min(1,sc.scrollTop/max):0}
+ $('#pProg').style.width=(r*100)+'%';
+}
 function goPart(d){
  if(!P.parts.length)return;
- const sc=$('#pScroll'),max=sc.scrollHeight-sc.clientHeight;const i=curPart()+d;
+ if(!S.ui.manual){const i=autoPart()+d;if(i<0||i>=P.parts.length)return;const sc=$('#pScroll');return sc.scrollTo({top:Math.max(0,autoTop(P.parts[i])),behavior:'smooth'})}
+ const i=P.pi+d;
  if(i>=P.parts.length){if(P.i<P.list.length-1)goSong(1);else toast('סוף הסט');return}
  if(i<0)return;
- const top=Math.max(0,Math.min(max,partTop(P.parts[i])));
- sc.scrollTo({top,behavior:'smooth'});
+ showPage(i);
 }
 function updPart(){
  const e=$('#pPart');if(!e)return;const n=P.parts.length;
@@ -1122,16 +1165,19 @@ function updPart(){
  $('#pPartPrev').disabled=i===0;
 }
 function applyMode(){
- const m=!!S.ui.manual;$('#play').classList.toggle('manual',m);
+ const m=!!S.ui.manual;$('#play').classList.toggle('manual',m);$('#pInner').classList.toggle('paged',m);
  const b=$('#pMode');b.classList.toggle('on',m);b.setAttribute('aria-pressed',m?'true':'false');
 }
 function toggleMode(){
+ const at=curPart();
  S.ui.manual=!S.ui.manual;save();P.playing=false;updPlayBtn();applyMode();P.cur=-1;
- if(S.ui.manual&&P.parts.length){const sc=$('#pScroll');sc.scrollTo({top:Math.max(0,partTop(P.parts[curPart()])),behavior:'smooth'})}
- onPScroll();toast(S.ui.manual?'גלילה ידנית: מעבר בין חלקים':'גלילה אוטומטית');
+ if(S.ui.manual)showPage(at);
+ else{P.pi=at;unfit();measure();const sc=$('#pScroll');if(P.parts[at])sc.scrollTop=Math.max(0,autoTop(P.parts[at]));P.pos=sc.scrollTop;onPScroll()}
+ updProg();castPush();toast(S.ui.manual?'דפדוף ידני: כל חלק בדף נפרד':'גלילה אוטומטית');
 }
 function exitShow(){
- P.playing=false;P.tok=null;cancelAnimationFrame(P.raf);keepAwake(false);
+ P.playing=false;P.tok=null;cancelAnimationFrame(P.raf);keepAwake(!!CAST.on);
+ setTimeout(castPush,0);
  if(P.from==='edit'&&curSong()){show('edit');renderEditor()}else{show('lib');renderLib()}
 }
 function goSong(d){const j=P.i+d;if(j<0||j>=P.list.length)return;P.i=j;loadPlay()}
@@ -1141,8 +1187,8 @@ $('#pSlow').onclick=()=>setSpeed(S.speed-.1);$('#pFast').onclick=()=>setSpeed(S.
 $('#pSm').onclick=()=>changeSize(-4);$('#pLg').onclick=()=>changeSize(4);
 $('#pMir').onclick=()=>{S.ui.mirror=!S.ui.mirror;save();$('#pInner').classList.toggle('mirror',S.ui.mirror);$('#pMir').classList.toggle('on',S.ui.mirror)};
 $('#pInv').onclick=()=>{const s=playSong();s.invert=!s.invert;touch(s);$('#pInner').classList.toggle('inv',s.invert);$('#pInv').classList.toggle('on',s.invert)};
-$('#pHide').onclick=()=>{S.ui.barHidden=true;save();$('#play').classList.add('barHidden')};
-$('#pShow').onclick=()=>{S.ui.barHidden=false;save();$('#play').classList.remove('barHidden')};
+$('#pHide').onclick=()=>{S.ui.barHidden=true;save();$('#play').classList.add('barHidden');if(S.ui.manual)fitPage(P.parts[P.pi])};
+$('#pShow').onclick=()=>{S.ui.barHidden=false;save();$('#play').classList.remove('barHidden');if(S.ui.manual)fitPage(P.parts[P.pi])};
 $('#pExit').onclick=exitShow;
 $('#pMode').onclick=toggleMode;
 $('#pPartPrev').onclick=()=>goPart(-1);$('#pPartNext').onclick=()=>goPart(1);
@@ -1158,7 +1204,7 @@ $('#pPartPrev').onclick=()=>goPart(-1);$('#pPartNext').onclick=()=>goPart(1);
   goPart(left?1:-1);
  });
 })();
-window.addEventListener('resize',()=>{if(SCREEN==='play'){measure();P.cur=-1;onPScroll()}else if(SCREEN==='edit')$$('#blocks textarea[data-txt]').forEach(autosize)});
+window.addEventListener('resize',()=>{if(SCREEN==='play'){if(S.ui.manual)fitPage(P.parts[P.pi]);else{measure();P.cur=-1}onPScroll()}else if(SCREEN==='edit')$$('#blocks textarea[data-txt]').forEach(autosize)});
 document.addEventListener('keydown',e=>{
  if(!$('#modalWrap').hidden){if(e.key==='Escape')closeModal();return}
  if(SCREEN!=='play')return;
@@ -1172,6 +1218,59 @@ document.addEventListener('keydown',e=>{
  else if(k==='ArrowRight'){e.preventDefault();goSong(-1)}
  else if(k==='Escape')exitShow();
 });
+
+/* ========= cast to second screen ========= */
+const CAST={on:false,info:null,t:0,last:'',sim:false};
+const CAN_CAST=!!(window.Android&&window.Android.castStart);
+function castState(){
+ const s=playSong();
+ if(SCREEN!=='play'||!s)return {idle:true};
+ const base={title:s.title,artist:s.artist||'',idx:P.i,count:P.list.length,manual:!!S.ui.manual,mirror:false};
+ if(s.kind==='pdf')return Object.assign(base,{kind:'pdf',page:curPart(),pages:P.parts.length});
+ const st=s.style,f=font(st.font),L=labelMap(s),parts=[];
+ s.parts.forEach(p=>{const src=srcOf(s,p);if(!src||!src.text.trim())return;parts.push({n:L[p.id]+(p.ref?' ↺':''),t:src.type,c:st.colors[src.type]||'#fff',x:src.text})});
+ return Object.assign(base,{kind:'text',font:f.css,w:f.w,align:st.align,lh:st.lh,labels:!!st.labels,size:st.size,parts,part:curPart(),line:Math.max(0,P.cur)});
+}
+function castSend(){
+ CAST.t=0;if(!CAST.on)return;
+ const j=JSON.stringify(castState());if(j===CAST.last)return;CAST.last=j;
+ if(CAN_CAST){try{window.Android.castState(j)}catch(e){}}
+ else{const f=$('#castWin iframe');if(f&&f.contentWindow)f.contentWindow.postMessage({rnState:JSON.parse(j)},'*')}
+}
+function castPush(){if(CAST.on&&!CAST.t)CAST.t=setTimeout(castSend,90)}
+function castStart(){
+ if(CAN_CAST){try{CAST.info=JSON.parse(window.Android.castStart())}catch(e){CAST.info=null}if(!CAST.info||!CAST.info.port)return toast('לא ניתן להפעיל שידור')}
+ else{
+  CAST.sim=true;CAST.info={port:8080,ips:['192.168.1.23'],display:null};
+  if(!$('#castWin')&&window.__VIEWER_HTML){const w=document.createElement('div');w.id='castWin';w.className='castWin';w.innerHTML='<iframe title="מסך שני"></iframe><span>מסך שני (הדמיה)</span>';document.body.appendChild(w);const fr=$('iframe',w);fr.srcdoc=window.__VIEWER_HTML;fr.onload=()=>{CAST.last='';castSend()}}
+ }
+ CAST.on=true;CAST.last='';$('#pCast').classList.add('on');keepAwake(true);castSend();
+}
+function castStop(){
+ CAST.on=false;clearTimeout(CAST.t);CAST.t=0;$('#pCast').classList.remove('on');
+ if(CAN_CAST){try{window.Android.castStop()}catch(e){}}
+ const w=$('#castWin');if(w)w.remove();
+ if(SCREEN!=='play')keepAwake(false);
+}
+function qrImg(text){
+ try{if(!window.qrcode)return '';const q=qrcode(0,'M');q.addData(text);q.make();return '<div class="castQr">'+q.createImgTag(5,0).replace('<img','<img alt="קוד QR לכתובת"')+'</div>'}catch(e){return ''}
+}
+function castModal(){
+ if(!CAST.on)castStart();
+ if(!CAST.on)return;
+ if(CAN_CAST){try{CAST.info=JSON.parse(window.Android.castInfo())}catch(e){}}
+ const I=CAST.info||{},url=I.ips&&I.ips.length?'http://'+I.ips[0]+':'+I.port:'';
+ const disp=I.display?'<div class="castStat"><span class="castDot"></span>מחובר ל-'+esc(I.display)+' – המילים מוצגות עליו</div>':'<p>חבר טלוויזיה או מקרן בשידור מסך אלחוטי (Miracast / Smart View) או בכבל HDMI. כשהמסך מתחבר, המילים יופיעו עליו אוטומטית במסך מלא – בלי סרגל הכלים.</p>';
+ const net=url?'<p>בכל מכשיר עם דפדפן שמחובר לאותה רשת Wi-Fi – טלוויזיה חכמה, טאבלט נוסף או מחשב – פתח את הכתובת או סרוק את הקוד:</p><div class="castUrl">'+esc(url)+'</div>'+qrImg(url)+(CAST.sim?'<p>בתצוגה המקדימה הכתובת היא לדוגמה. החלון הקטן בפינה מדמה את המסך השני.</p>':''):'<p>הטאבלט לא מחובר לרשת Wi-Fi. חבר אותו לרשת (או הפעל נקודה חמה) ופתח את החלון הזה שוב.</p>';
+ openModal('<h2>שידור למסך נוסף</h2><div class="castStat"><span class="castDot"></span>השידור פעיל – המסך השני עוקב אחרי הטאבלט</div>'+
+  '<div class="castBox"><b>מסך אלחוטי או HDMI</b>'+disp+'</div>'+
+  '<div class="castBox"><b>דרך רשת Wi-Fi</b>'+net+'</div>'+
+  '<div class="acts"><button class="btn" id="castOff" style="color:#FF9A8F">עצור שידור</button><span class="flex1"></span><button class="btn pri" id="castClose">סגור</button></div>',true);
+ $('#castOff').onclick=()=>{castStop();closeModal();toast('השידור הופסק')};
+ $('#castClose').onclick=closeModal;
+}
+window.__castDisplay=function(name){if(CAST.on){if(CAST.info)CAST.info.display=name||null;toast(name?'מסך מחובר: '+name:'המסך החיצוני נותק')}};
+$('#pCast').onclick=castModal;
 
 /* ========= pdf import ========= */
 const IMP={src:'device',folder:''};
