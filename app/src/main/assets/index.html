@@ -311,7 +311,7 @@ select.chip{cursor:pointer}
 .pb.chordsBtn.on{background:#173229;color:#7FE0B0}
 .tvTxt{--chc:#7FE0B0}
 .tvTxt .ca .c{font-size:.7em}
-.tvPart .tvTxt{line-height:2.1}
+.tvPart .tvTxt:has(.ca){line-height:2.1}
 .reptext .rl.hasCh{line-height:2.2}
 .reptext .ca .c{font-size:.7em;color:var(--chc)}
 .eLines{display:flex;flex-direction:column;font-size:22px}
@@ -359,6 +359,9 @@ select.chip{cursor:pointer}
 .wSearch{flex:1;max-width:560px;height:46px;padding:0 14px;display:flex;align-items:center;gap:10px;background:var(--fld);border:1px solid var(--ln2);border-radius:12px;color:var(--mu)}
 .wSearch input{flex:1;min-width:0;background:transparent;border:0;outline:none;font-size:17px;color:var(--tx)}
 .wRes{width:400px;border-left:1px solid var(--ln);padding:16px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.wKind{margin-bottom:6px;flex-shrink:0}
+.wKind button{height:40px}
+.wKind button.on:first-child{color:#7FE0B0}
 .wItem{padding:12px 14px;background:var(--p1);border:1px solid #2A2D33;border-radius:12px;text-align:right;color:var(--tx);display:flex;flex-direction:column;gap:4px;width:100%;flex-shrink:0}
 .wItem.on{border-color:var(--am);background:var(--amT)}
 .wItem b{font-family:var(--ti);font-size:16px;font-weight:600;line-height:1.3}
@@ -1698,7 +1701,7 @@ const HTTP={n:0,cb:{}};
 const CAN_HTTP=!!(window.Android&&window.Android.httpGet);
 function httpGet(url){
  return new Promise((res,rej)=>{
-  if(url.startsWith('demo:'))return setTimeout(()=>res({text:demoPage(),url}),400);
+  if(url.startsWith('demo:'))return setTimeout(()=>res({text:demoPage(url!=='demo:lyrics'),url}),400);
   if(!CAN_HTTP)return rej(new Error('nonative'));
   const id='h'+(++HTTP.n);HTTP.cb[id]={res,rej};
   try{window.Android.httpGet(id,url)}catch(e){delete HTTP.cb[id];return rej(e)}
@@ -1715,10 +1718,10 @@ function toChordSheet(line){
  ch.forEach(x=>{const e=runLen-(x.p-first),st=Math.max(0,e-x.c.length);for(let k=0;k<x.c.length;k++)run[st+k]=x.c[k]});
  return [' '.repeat(first)+run.join(''),ly];
 }
-function demoPage(){
+function demoPage(withChords){
  const s=sampleSong(null),L=[];
- s.parts.forEach(p=>{const src=srcOf(s,p);if(src&&src.type!=='note')L.push(src.text.split('\n').map(toChordSheet).flat().join('\n'))});
- return '<html><head><title>אור ראשון – אקורדים לדוגמה</title></head><body><pre>'+esc(L.join('\n\n'))+'</pre></body></html>';
+ s.parts.forEach(p=>{const src=srcOf(s,p);if(src&&src.type!=='note')L.push(src.text.split('\n').map(l=>withChords?toChordSheet(l):[stripChords(l)]).flat().join('\n'))});
+ return '<html><head><title>אור ראשון – '+(withChords?'אקורדים':'מילים')+' לדוגמה</title></head><body><pre>'+esc(L.join('\n\n'))+'</pre></body></html>';
 }
 const CHORD_SITES=/tab4u|ultimate-guitar|nagnu|e-chords|chordie|guitaretab|cifraclub|azchords|chordu|911tabs|songsterr|guitartabsexplorer/i;
 const KNOWN=/shironet|genius\.com|azlyrics|lyrics\.com|letras|musixmatch|tab4u|nagnu|zemereshet|songlyrics|lyricsfreak|lyricstranslate|lyrics\.az|shir\.co|sheeronet/i;
@@ -1744,9 +1747,10 @@ function parseBing(html){
   return {title:a.textContent.trim(),url:href,snippet:sn?sn.textContent.trim():''};
  }).filter(Boolean);
 }
-async function webSearch(q){
- if(!CAN_HTTP)return [{title:'אור ראשון – אקורדים לדוגמה',url:'demo:1',chords:true,known:true,snippet:'בתצוגה המקדימה אין גישה לאתרים. באפליקציה בטאבלט יופיעו כאן תוצאות אמיתיות מכל אתרי המילים.',demo:true}];
- const qq=q+(HEB.test(q)?' אקורדים':' chords');
+async function webSearch(q,kind){
+ const ch=kind!=='lyrics';
+ if(!CAN_HTTP)return [ch?{title:'אור ראשון – אקורדים לדוגמה',url:'demo:1',chords:true,known:true,snippet:'בתצוגה המקדימה אין גישה לאתרים. באפליקציה בטאבלט יופיעו כאן תוצאות אמיתיות מאתרי אקורדים.',demo:true}:{title:'אור ראשון – מילים לדוגמה',url:'demo:lyrics',known:true,snippet:'בתצוגה המקדימה אין גישה לאתרים. באפליקציה בטאבלט יופיעו כאן תוצאות אמיתיות מאתרי מילים.',demo:true}];
+ const qq=q+(HEB.test(q)?(ch?' אקורדים':' מילים לשיר'):(ch?' chords':' lyrics'));
  let res=[];
  try{res=parseDDG((await httpGet('https://html.duckduckgo.com/html/?q='+encodeURIComponent(qq)+'&kl=il-he')).text)}catch(e){}
  if(res.length<4){try{res=res.concat(parseBing((await httpGet('https://www.bing.com/search?q='+encodeURIComponent(qq)+'&setlang=he&cc=IL')).text))}catch(e){}}
@@ -1754,6 +1758,8 @@ async function webSearch(q){
  res=res.filter(r=>/^https?:/.test(r.url)&&!SKIP.test(r.url)&&!seen.has(r.url)&&seen.add(r.url));
  res.forEach(r=>{r.chords=CHORD_SITES.test(r.url);r.known=r.chords||KNOWN.test(r.url)});
  res.sort((a,b)=>((b.chords?2:0)+(b.known?1:0))-((a.chords?2:0)+(a.known?1:0)));
+ if(ch){const only=res.filter(r=>r.chords);WEB.fallback=!only.length&&res.length>0;if(only.length)res=only}
+ else{res=res.filter(r=>!r.chords);res.sort((a,b)=>(b.known?1:0)-(a.known?1:0));WEB.fallback=false}
  return res.slice(0,20);
 }
 const SITE_SEL=[
@@ -1838,22 +1844,23 @@ function extractLyrics(html,url){
  return {text:addBreaks(txt),meta:parseTitle((og&&og.getAttribute('content'))||d.title)};
 }
 
-const WEB={q:'',res:[],sel:-1,busy:false,loading:false,cur:null,view:'split',folder:'',saved:null,tok:null};
+const WEB={fallback:false,q:'',res:[],sel:-1,busy:false,loading:false,cur:null,view:'split',folder:'',saved:null,tok:null};
 function openWeb(){WEB.folder=S.folders.some(x=>x.id===S.ui.folder)?S.ui.folder:'';show('web');renderWebRes();renderWebPrev();setTimeout(()=>$('#wq').focus(),80)}
 function closeWeb(){WEB.tok=null;show('lib');renderLib()}
 async function doWebSearch(){
  const q=$('#wq').value.trim();if(!q)return toast('כתוב שם של שיר או זמר');
  $('#wq').blur();WEB.q=q;WEB.busy=true;WEB.res=[];WEB.sel=-1;WEB.cur=null;renderWebRes();renderWebPrev();
- try{WEB.res=await webSearch(q)}catch(e){WEB.res=[]}
+ try{WEB.res=await webSearch(q,S.ui.webKind)}catch(e){WEB.res=[]}
  WEB.busy=false;renderWebRes();renderWebPrev();
  if(WEB.res.length&&window.innerWidth>900)pickWeb(0);
 }
 function renderWebRes(){
- const E=$('#wRes');
- if(WEB.busy){E.innerHTML='<div class="wMsg"><span class="spin big"></span>מחפש באתרי מילים…</div>';return}
- if(!WEB.q){E.innerHTML='<div class="hint">חפש לפי שם השיר, ואפשר להוסיף את שם הזמר לתוצאות מדויקות יותר.</div>';return}
- if(!WEB.res.length){E.innerHTML='<div class="wMsg">לא נמצאו תוצאות. בדוק את החיבור לאינטרנט או נסה ניסוח אחר.</div>';return}
- E.innerHTML=WEB.res.map((r,i)=>'<button class="wItem'+(WEB.sel===i?' on':'')+'" data-wi="'+i+'"><b>'+esc(r.title)+'</b><span class="dom'+(r.known?' known':'')+'">'+esc(r.demo?'תצוגה מקדימה':hostOf(r.url))+(r.chords?' · אקורדים':'')+'</span>'+(r.snippet?'<span class="sn">'+esc(r.snippet)+'</span>':'')+'</button>').join('');
+ const E=$('#wRes'),ch=S.ui.webKind!=='lyrics';
+ const seg='<div class="seg full wKind"><button data-wk="chords" class="'+(ch?'on':'')+'">'+ic('music',16)+'עם אקורדים</button><button data-wk="lyrics" class="'+(ch?'':'on')+'">'+ic('text',16)+'מילים בלבד</button></div>';
+ if(WEB.busy){E.innerHTML=seg+'<div class="wMsg"><span class="spin big"></span>'+(ch?'מחפש באתרי אקורדים…':'מחפש באתרי מילים…')+'</div>';return}
+ if(!WEB.q){E.innerHTML=seg+'<div class="hint">'+(ch?'יוצגו אתרים עם אקורדים, כמו Tab4U ו-Ultimate Guitar.':'יוצגו אתרים עם מילים בלבד, כמו שירונט ו-Genius.')+' חפש לפי שם השיר, ואפשר להוסיף את שם הזמר.</div>';return}
+ if(!WEB.res.length){E.innerHTML=seg+'<div class="wMsg">לא נמצאו תוצאות. בדוק את החיבור לאינטרנט או נסה ניסוח אחר.</div>';return}
+ E.innerHTML=seg+(ch&&WEB.fallback?'<div class="hint">לא נמצאו אתרי אקורדים מוכרים – מוצגות כל התוצאות.</div>':'')+WEB.res.map((r,i)=>'<button class="wItem'+(WEB.sel===i?' on':'')+'" data-wi="'+i+'"><b>'+esc(r.title)+'</b><span class="dom'+(r.known?' known':'')+'">'+esc(r.demo?'תצוגה מקדימה':hostOf(r.url))+(r.chords?' · אקורדים':'')+'</span>'+(r.snippet?'<span class="sn">'+esc(r.snippet)+'</span>':'')+'</button>').join('');
 }
 async function pickWeb(i){
  WEB.sel=i;WEB.cur=null;WEB.saved=null;WEB.loading=true;WEB.view='split';const tok=WEB.tok=uid();
@@ -1897,6 +1904,7 @@ $('#web').addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;const d=t.dataset;
  if(t.id==='webClose')return closeWeb();
  if(t.id==='wGo')return doWebSearch();
+ if(d.wk){if(S.ui.webKind===d.wk||(!S.ui.webKind&&d.wk==='chords'))return;S.ui.webKind=d.wk;save();WEB.res=[];WEB.sel=-1;WEB.cur=null;renderWebPrev();if(WEB.q){$('#wq').value=WEB.q;return doWebSearch()}return renderWebRes()}
  if(d.wi)return pickWeb(+d.wi);
  if(d.wv){if(WEB.view==='edit'&&$('#wText')){WEB.cur.text=$('#wText').value;WEB.cur.parts=autoSplit(WEB.cur.text)}WEB.view=d.wv;return renderWebPrev()}
  if(t.id==='wResplit'){WEB.cur.text=$('#wText').value;WEB.cur.parts=autoSplit(WEB.cur.text);WEB.view='split';renderWebPrev();return toast('חולק מחדש')}
