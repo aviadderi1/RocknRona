@@ -27,15 +27,15 @@ jobs:
         run: gradle assembleRelease --no-daemon --stacktrace
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk RocknRona.apk
+        run: cp app/build/outputs/apk/release/app-release.apk StagePromt.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: RocknRona.apk
-          path: RocknRona.apk
+          name: StagePromt.apk
+          path: StagePromt.apk
 
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: RocknRona – גרסה ${{ github.run_number }}
-          files: RocknRona.apk
+          name: StagePromt – גרסה ${{ github.run_number }}
+          files: StagePromt.apk

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#111214">
-<title>RocknRona – פרומפטר מילים</title>
+<title>StagePromt – פרומפטר מילים</title>
 <link rel="stylesheet" href="fonts.css">
 <style>
 :root{--bg:#111214;--p1:#1A1C20;--p2:#15171A;--fld:#1B1D22;--ln:#26292F;--ln2:#2E3138;--tx:#F2EEE6;--mu:#A09A90;--mu2:#8F897F;--am:#E8A33D;--amT:#2A2419;--amB:#4A3E28;--ve:#E8A33D;--ch:#7DB8F0;--br:#C9A6F0;--no:#8F897F;--ui:'Assistant','Segoe UI',sans-serif;--ti:'Rubik','Assistant',sans-serif;--bf:'Frank Ruhl Libre',Georgia,serif}
@@ -361,15 +361,15 @@ select.chip{cursor:pointer}
 </head>
 <body>
 
-<div id="splash" aria-label="טוען את RocknRona" role="img">
-  <img class="spLogo" src="logo.png" alt="RocknRona">
+<div id="splash" aria-label="טוען את StagePromt" role="img">
+  <img class="spLogo" src="logo.png" alt="StagePromt">
   <div class="spBar" aria-hidden="true"><i id="spFillBar"></i></div>
   <div class="spPct" id="spPct">0%</div>
 </div>
 
 <section id="lib" class="screen active">
   <header class="hdr">
-    <div class="brand"><img class="logoImg" src="logo.png" alt="RocknRona"></div>
+    <div class="brand"><img class="logoImg" src="logo.png" alt="StagePromt"></div>
     <div class="flex1"></div>
     <label class="search"><i data-ic="search" data-s="18"></i><input id="q" type="search" placeholder="חיפוש שיר, אמן או שורה…" aria-label="חיפוש"></label>
     <button class="btn" id="libWeb"><i data-ic="globe" data-s="18"></i><span class="hideS">חיפוש ברשת</span></button>
@@ -1348,7 +1348,7 @@ function renderImp(){
  $('#impStatus').innerHTML=IMP.doc?(IMP.scanned?'<span class="warn">קובץ סרוק — יוצג כמו שהוא</span>':ic('check',16)+'הטקסט זוהה'):'';
  const B=$('#impBody');
  if(IMP.busy){B.innerHTML='<div class="impEmpty"><span class="spin big"></span><p>קורא את הקובץ…</p></div>';return}
- if(!IMP.doc){B.innerHTML='<div class="impEmpty"><h2>מאיפה לייבא?</h2><p>בחר קובץ PDF עם מילים לשירים. אפשר גם לשתף קובץ PDF אל "במה" ישירות מוואטסאפ, מהמייל או מ-Google Drive.</p><div class="srcRow"><button class="srcBig" data-src="device">'+ic('phone',34)+'<span>מהמכשיר</span></button><button class="srcBig" data-src="drive">'+ic('cloud',34)+'<span>Google Drive</span></button><button class="srcBig" data-src="dropbox">'+ic('box',34)+'<span>Dropbox</span></button></div></div>';return}
+ if(!IMP.doc){B.innerHTML='<div class="impEmpty"><h2>מאיפה לייבא?</h2><p>בחר קובץ PDF עם מילים לשירים. אפשר גם לשתף קובץ PDF אל StagePromt ישירות מוואטסאפ, מהמייל או מ-Google Drive.</p><div class="srcRow"><button class="srcBig" data-src="device">'+ic('phone',34)+'<span>מהמכשיר</span></button><button class="srcBig" data-src="drive">'+ic('cloud',34)+'<span>Google Drive</span></button><button class="srcBig" data-src="dropbox">'+ic('box',34)+'<span>Dropbox</span></button></div></div>';return}
  const n=IMP.doc.numPages;
  B.innerHTML='<aside class="thumbs scroll">'+Array.from({length:n},(_,i)=>'<button class="thumb'+(IMP.page===i+1?' on':'')+'" data-pg="'+(i+1)+'"><span class="tc" id="tc'+(i+1)+'"></span>עמוד '+(i+1)+'</button>').join('')+'</aside>'+
   '<main class="impCenter"><div class="seg"><button data-view="page" class="'+(IMP.view==='page'?'on':'')+'">עמוד</button><button data-view="text" class="'+(IMP.view==='text'?'on':'')+'"'+(IMP.scanned?' disabled':'')+'>טקסט שזוהה</button></div><div class="impView scroll" id="impView"></div></main>'+

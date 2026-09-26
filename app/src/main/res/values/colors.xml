@@ -2,4 +2,5 @@
 <resources>
     <color name="bg">#FF111214</color>
     <color name="amber">#FFE8A33D</color>
+    <color name="iconbg">#FF141B28</color>
 </resources>
