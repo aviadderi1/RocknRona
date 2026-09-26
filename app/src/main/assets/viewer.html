@@ -12,6 +12,7 @@ html,body{margin:0;height:100%;background:#000;color:#F2EEE6;overflow:hidden;fon
 #idle img{width:min(62vw,900px);height:auto;opacity:.92}
 #idle.off{opacity:0;pointer-events:none}
 #hdr{position:fixed;top:0;left:0;right:0;height:7vh;min-height:34px;display:flex;align-items:center;gap:2vw;padding:0 3vw;font-family:'Rubik','Assistant',sans-serif;font-weight:600;font-size:max(15px,2.4vh);color:#8F897F;z-index:2;background:linear-gradient(#000 70%,rgba(0,0,0,0))}
+#hdr[hidden]{display:none}
 #hdr b{color:#CFC9BF;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #hdr .fl{flex:1}
 #sc{position:fixed;left:0;right:0;top:0;bottom:0;overflow:hidden}
@@ -23,11 +24,6 @@ html,body{margin:0;height:100%;background:#000;color:#F2EEE6;overflow:hidden;fon
 .ln.note{font-size:.45em;font-style:italic;font-weight:600;font-family:'Assistant',sans-serif}
 .sec{font-family:'Assistant',sans-serif;font-size:max(16px,.26em);font-weight:800;letter-spacing:1px;margin:.9em 0 .1em;opacity:.85}
 .gap{height:.45em}
-.ca{position:relative}
-.ca .c{position:absolute;bottom:100%;right:0;margin-bottom:-.12em;font-family:'Assistant',sans-serif;font-weight:800;font-size:.5em;line-height:1;color:var(--chc,#7FE0B0);direction:ltr;unicode-bidi:isolate;white-space:nowrap}
-.ltrl .ca .c{right:auto;left:0}
-.conly{font-family:'Assistant',sans-serif;font-weight:800;font-size:.55em;color:var(--chc,#7FE0B0);direction:ltr;white-space:pre}
-.ln.hasCh{line-height:calc(var(--lh,1.35) + .7)}
 .paged .part{display:none}
 .paged .part.on{display:block;animation:pg .28s ease-out}
 .paged .ln{opacity:1}
@@ -50,36 +46,17 @@ html,body{margin:0;height:100%;background:#000;color:#F2EEE6;overflow:hidden;fon
 'use strict';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const CHORD_TOK=/^[A-H](?:#|b|♯|♭)?(?:maj|min|dim|aug|sus|add|m|M|°|ø|\+)?\d*(?:(?:sus|add|maj|b|#|\+|-)\d+)*(?:\/[A-H](?:#|b|♯|♭)?)?$/;
-const isChord=t=>CHORD_TOK.test(t);
-const hasCh=s=>{let f=false;s.replace(/\[([^\]\s]{1,12})\]/g,(m,c)=>{if(isChord(c))f=true;return m});return f};
-const strip=s=>s.replace(/\[([^\]\s]{1,12})\]/g,(m,c)=>isChord(c)?'':m).replace(/ {2,}/g,' ').trim();
-function parseLine(line){const ch=[];let t='';String(line||'').replace(/\[([^\]\s]{1,12})\]|\[|[^\[]+/g,(m,c)=>{if(c!==undefined&&isChord(c))ch.push({i:t.length,c});else t+=m;return m});return {t,ch}}
-function lyr(line,show){
- const p=parseLine(line);if(!p.ch.length)return esc(line);
- if(!show)return esc(p.t.replace(/ {2,}/g,' ').trim());
- if(!p.t.trim())return '<span class="conly">'+p.ch.map(x=>esc(x.c)).join('&nbsp;&nbsp;&nbsp;')+'</span>';
- const a=p.ch.slice().sort((x,y)=>x.i-y.i);let h='',k=0;
- a.forEach(x=>{h+=esc(p.t.slice(k,x.i))+'<span class="ca"><span class="c">'+esc(x.c)+'</span></span>';k=x.i});
- return h+esc(p.t.slice(k));
-}
-const ltr=l=>{const t=parseLine(l).t;return !/[֐-׿]/.test(t)&&/[A-Za-z]/.test(t)};
 let key='',st=null,cur=0,target=0,lines=[],parts=[],raf=0;
 function hdrH(){return $('#hdr').hidden?0:$('#hdr').offsetHeight}
 function scale(){return Math.min(innerWidth/1180,innerHeight/760)}
 function build(s){
  const inn=$('#in');
- inn.style.cssText='font-family:'+s.font+';font-weight:'+s.w+';font-size:'+Math.round(s.size*scale())+'px;text-align:'+s.align+';line-height:'+s.lh+';--lh:'+s.lh+';--chc:'+(s.cc||'#7FE0B0');
- const show=s.chords!==false;
+ inn.style.cssText='font-family:'+s.font+';font-weight:'+s.w+';font-size:'+Math.round(s.size*scale())+'px;text-align:'+s.align+';line-height:'+s.lh;
  let h='';
  s.parts.forEach(p=>{
   h+='<div class="part">';
   if(s.labels)h+='<div class="sec" style="color:'+p.c+'">'+esc(p.n)+'</div>';
-  p.x.split('\n').forEach(l=>{
-   if(!l.trim()){h+='<div class="gap"></div>';return}
-   const hc=hasCh(l);if(hc&&!show&&!strip(l))return;
-   h+='<div class="ln'+(p.t==='note'?' note':'')+(hc&&show?' hasCh':'')+(hc&&ltr(l)?' ltrl':'')+'" style="color:'+p.c+'">'+lyr(l,show)+'</div>';
-  });
+  p.x.split('\n').forEach(l=>{h+=l.trim()?'<div class="ln'+(p.t==='note'?' note':'')+'" style="color:'+p.c+'">'+esc(l)+'</div>':'<div class="gap"></div>'});
   if(!s.labels)h+='<div class="gap"></div>';
   h+='</div>';
  });
@@ -108,7 +85,7 @@ function apply(s){
   return;
  }
  $('#msg').style.display='none';
- const k=JSON.stringify([s.title,s.parts,s.chords,s.cc,s.font,s.size,s.lh,s.align,s.labels,innerWidth,innerHeight]);
+ const k=JSON.stringify([s.title,s.parts,s.font,s.size,s.lh,s.align,s.labels,innerWidth,innerHeight]);
  const inn=$('#in');
  if(k!==key){key=k;build(s);cur=target=0}
  inn.classList.toggle('paged',!!s.manual);
