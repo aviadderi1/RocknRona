@@ -355,7 +355,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private val userAgent =
-        "Mozilla/5.0 (Linux; Android 14; Tablet) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
 
     /** Fetch a web page natively (no CORS) and hand the HTML back to the page. */
     private fun fetchPage(id: String, url: String) {
