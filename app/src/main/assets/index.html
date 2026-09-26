@@ -727,14 +727,13 @@ function renderLib(){
  let h='<div class="navTop"><button class="btn sm ghost" id="navHide">'+ic('side',18)+'הסתר</button></div>'+row('all','music','כל השירים')+row('fav','star','מועדפים');
  h+='<div class="lbl navLbl">תיקיות</div>'+S.folders.map(f=>row(f.id,'folder',f.name,true)).join('');
  h+='<button class="btn dash newFold" id="newFold">'+ic('plus',16)+'תיקייה חדשה</button><div class="flex1"></div>';
- h+='<div class="legend"><div class="lbl">מקרא צבעים</div><div><i class="t-verse"></i>בית</div><div><i class="t-chorus"></i>פזמון</div><div><i class="t-bridge"></i>גשר</div></div>';
+ 
  $('#nav').innerHTML=h;
 
  const list=visibleSongs(),all=songsIn(S.ui.folder);
  const reorder=S.ui.sort==='set'&&LIB.reorder;
  const sb=(k,l)=>'<button data-sort="'+k+'" class="'+(S.ui.sort===k?'on':'')+'">'+l+'</button>';
  $('#mhead').innerHTML=(S.ui.navHidden?'<button class="btn" id="navShow">'+ic('folder',18)+'תיקיות</button>':'')+'<div class="flex1"><h1>'+esc(folderName(S.ui.folder))+'</h1><div class="sub">'+(all.length===1?'שיר אחד':all.length+' שירים')+'</div></div>'+
-  '<button class="btn" id="viewBtn">'+ic(S.ui.view==='list'?'grid':'list',18)+(S.ui.view==='list'?'כרטיסים':'רשימה')+'</button>'+
   (S.ui.sort==='set'&&list.length>1&&!$('#q').value?'<button class="btn'+(reorder?' pri':'')+'" id="reorderBtn">'+ic('sort',18)+(reorder?'סיום':'שנה סדר')+'</button>':'')+
   '<div class="seg">'+sb('set','סדר הופעה')+sb('az','א–ת')+sb('recent','אחרונים')+'</div>';
 
@@ -742,8 +741,8 @@ function renderLib(){
  if(!list.length){
   G.innerHTML=$('#q').value?'<div class="emptyLib"><h2>לא נמצאו שירים</h2><p>נסה מילה אחרת מהשם או מהמילים.</p></div>':
    '<div class="emptyLib"><h2>אין עדיין שירים כאן</h2><p>כתוב שיר חדש או ייבא קובץ PDF עם מילים.</p><div><button class="btn pri" id="emptyNew">'+ic('plus',18)+'שיר חדש</button><button class="btn" id="emptyWeb">'+ic('globe',18)+'חיפוש ברשת</button><button class="btn" id="emptyImp">'+ic('upload',18)+'ייבוא PDF</button></div></div>';
- }else G.innerHTML=list.map((s,i)=>(S.ui.view==='list'?listRow:card)(s,i,list.length,reorder)).join('');
- G.classList.toggle('asList',S.ui.view==='list');
+ }else G.innerHTML=list.map((s,i)=>listRow(s,i,list.length,reorder)).join('');
+ G.classList.add('asList');
  $('#lib').classList.toggle('navHidden',!!S.ui.navHidden);
 
  $('#setbar').innerHTML=list.length?'<div class="setbar">'+ic('list',22)+'<div class="flex1 sbTxt"><b>'+(list.length===1?'שיר אחד':list.length+' שירים')+' בסט</b><span>'+esc(list.slice(0,4).map(s=>s.title).join(' ← '))+(list.length>4?' ← …':'')+'</span></div><button class="btn pri" id="startSet">'+ic('play',16)+'התחל הופעה</button></div>':'';
@@ -815,7 +814,6 @@ $('#lib').addEventListener('click',e=>{
  if(d.fm)return folderMenu(d.fm);
  if(t.id==='newFold')return ask('תיקייה חדשה','','צור תיקייה',v=>{const f={id:uid(),name:v};S.folders.push(f);S.ui.folder=f.id;save();renderLib()});
  if(d.sort){S.ui.sort=d.sort;LIB.reorder=false;save();renderLib();return}
- if(t.id==='viewBtn'){S.ui.view=S.ui.view==='list'?'grid':'list';save();renderLib();return}
  if(t.id==='navHide'||t.id==='navShow'){S.ui.navHidden=t.id==='navHide';save();renderLib();return}
  if(t.id==='reorderBtn'){LIB.reorder=!LIB.reorder;renderLib();return}
  if(d.open)return openEditor(d.open);
